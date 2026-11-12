@@ -347,9 +347,8 @@ const AILINKS=[['Claude','https://claude.ai/new'],['ChatGPT','https://chatgpt.co
 function ai(scene,o){
   o=o||{};
   return [
-    F.head('請 AI 幫忙','三步驟：① 寫好指令　② 複製後前往平台貼上　③ 把 AI 的回覆貼回來。'+(o.note||'')),
+    F.head('請 AI 幫忙','三步驟：① 看系統用你填的內容組好的指令　② 複製後前往平台貼上　③ 把 AI 的回覆貼回來。'+(o.note||'')),
     F.builder(),
-    F.area('ai_prompt','① 我要給 AI 的指令','可以先按上面的按鈕組一份草稿，再改成你的版本',{short:'指令',pmax:150}),
     {type:'ailinks'},
     F.sel('ai_platform','我這次用的平台',AILINKS.map(a=>a[0]).concat(['其他']),{short:'平台',opt:true}),
     F.area('ai_reply',o.replyLabel||'③ 把 AI 的回覆貼回這裡','在平台拿到回覆後，整段複製回來貼上。貼好後會出現在島上。',{big:true,short:'AI 回覆',pmax:170,opt:!!o.replyOpt})
@@ -412,10 +411,10 @@ const ISLANDS = [
     F.sel('focus','我想請 AI 怎麼分析',['釐清問題本身：這兩個維度下，有哪些做法或因素','連到未來職業：這兩個維度下，哪些工作方向能避開或化解這個困擾'],{short:'分析重點'}),
     F.sel('source','這兩個維度的靈感來自',()=>[0,1,2].filter(j=>has(D.L2['f'+j])).map(j=>({v:'f'+j,t:'查詢發現 '+(j+1)+'：'+cut0(D.L2['f'+j],26)})).concat([{v:'none',t:'不是來自查詢結果'}]),{short:'靈感來源',opt:true,disp:v=>v==='none'?'不是來自查詢結果':(D.L2[v]||'（那一條發現已被清空）')}),
     ...ai('data',{note:'草稿會要求 AI 照固定的標題回覆（直接回答、象限 1 到 4、結論），貼回後才能自動拆解，標題請不要改。',replyLabel:'③ 把 AI 的回覆貼回這裡（會自動拆進下面四象限）'}),
-    F.area('qa','AI 的直接回答','貼回 AI 回覆後會自動帶入；這是 AI 對「我想弄清楚什麼」的回答',{short:'AI 直接回答',opt:true,pmax:170}),
-    F.head('四象限','AI 的回覆貼回後會自動拆進四格。拆得不對，可以直接在格子裡修改。'),
+    F.head('四象限','AI 的回覆一貼上，就會自動拆進下面四格。拆得不對，可以直接在格子裡修改，或按格子下方的按鈕重拆。'),
     {type:'quadgrid'},
     ...[1,2,3,4].map(n=>({type:'area',k:'q'+n,label:()=>'象限 '+n+'｜'+qName(n),hidden:true,skipPoster:true,pmax:120})),
+    F.area('qa','AI 的直接回答','貼回 AI 回覆後會自動帶入；這是 AI 對「我想弄清楚什麼」的回答',{short:'AI 直接回答',opt:true,pmax:170}),
     F.area('qc','AI 的結論','貼回 AI 回覆後會自動帶入',{short:'AI 結論',opt:true,pmax:130}),
     F.sel('prefer','我想往哪一個象限走',OPTSEL,{short:'想走向',disp:v=>'象限 '+v+'｜'+qName(+v),empty:'（先讓四象限有內容）'}),
     F.area('insight','分析後我看見什麼','',{big:true,short:'洞察'})
@@ -423,7 +422,7 @@ const ISLANDS = [
  {id:'L4',side:'self',quad:'hidden',no:'4',name:'圖像島',scene:'圖片生成',q:-3,r:3,
   ask:'走到你想去的那個象限，那一天長什麼樣子？',
   intro:'把分析島你想走向的象限，變成一張看得見的畫面。描述越具體，圖越接近你心裡的樣子。',
-  req:['years','option','place','doing','style','ai_prompt','feel'],
+  req:['years','option','place','doing','style','feel'],
   fields:[
     F.sel('years','這是幾年後的我',['3 年後','5 年後','10 年後'],{short:'時間'}),
     F.sel('option','這張圖畫的是分析島的哪個象限',OPTSEL,{short:'對應象限',disp:v=>'象限 '+v+'｜'+qName(+v),empty:'（先到分析島完成四象限）'}),
@@ -603,7 +602,7 @@ function peerAvg(){
   const avg=k=>es.reduce((a,e)=>a+ +e[k],0)/es.length; return [avg('p1'),avg('p2'),avg('p3')];
 }
 const AIKEYS=['平台／模型的選擇','指令怎麼下','參考資料怎麼給'];
-const aiDone=id=>has(D[id].ai_prompt)&&(has(D[id].ai_reply)||has(D[id].image)||has(D[id].cover)||has(D[id].link));
+const aiDone=id=>(has(D[id].ai_reply)||has(D[id].image)||has(D[id].cover)||has(D[id].link));
 function checks(){
   const out=[], add=(state,title,detail,go)=>out.push({state,title,detail,go});
   const st=dimStats(), L1=D.L1, L2=D.L2, L3=D.L3, L4=D.L4, L5=D.L5, L6=D.L6;
@@ -648,7 +647,7 @@ function checks(){
   else add('todo','行動有回應一開始想處理的不滿意','需要查詢島選的議題，和燈塔島的行動（含回應面向）。',has(L2.dim)?'L6':'L2');
   // 13 AI 三步驟
   const aiIs=['L1','L2','L3','L4','L5','L6'], full=aiIs.filter(aiDone);
-  add(full.length>=5?'ok':(full.length?'warn':'todo'),'每座島都走完「寫指令、貼平台、貼回覆」','完成的島：'+full.length+' / 6。'+(full.length<6?'還沒完成：'+aiIs.filter(i=>!full.includes(i)).map(i=>BY[i].name).join('、')+'。':''),aiIs.find(i=>!full.includes(i))||'L1');
+  add(full.length>=5?'ok':(full.length?'warn':'todo'),'每座島都走完「複製指令、貼平台、貼回覆」','完成的島：'+full.length+' / 6。'+(full.length<6?'還沒完成：'+aiIs.filter(i=>!full.includes(i)).map(i=>BY[i].name).join('、')+'。':''),aiIs.find(i=>!full.includes(i))||'L1');
   // 14 同儕回饋
   const fb=['R1','R2','R3','R4'].filter(id=>D[id].entries.some(e=>BY[id].ereq.every(k=>has(e[k]))));
   add(fb.length===4?'ok':(fb.length?'warn':'todo'),'四座回饋島都有同學留言','已有完整回饋的島：'+fb.length+' / 4。',['R1','R2','R3','R4'].find(i=>!fb.includes(i))||'R1');
@@ -983,7 +982,7 @@ function fieldHTML(f,store,path){
   const lab=typeof f.label==='function'?f.label(store):f.label, v=store[f.k], id='f_'+path+'_'+f.k, opt=f.opt?' <small>選填</small>':'';
   if(f.type==='head')return `<div class="fhead"><h3>${esc(lab)}</h3>${f.desc?`<p>${esc(f.desc)}</p>`:''}</div>`;
   if(f.type==='chart')return `<canvas class="chart" id="chartPrev" width="840" height="620" aria-label="二維矩陣預覽"></canvas>`;
-  if(f.type==='builder')return `<div class="builder"><button type="button" class="btn small" data-build>用我填的內容組一份指令草稿</button><span style="font-size:13px;color:var(--muted);margin-left:8px">草稿只是起點，改成你的版本再送出</span><div data-buildout></div></div>`;
+  if(f.type==='builder')return `<div class="builder"><span class="lab" style="display:block;font-weight:700;font-size:14px;margin-bottom:6px">① 給 AI 的指令</span><button type="button" class="btn small" data-build>用我填的內容組一份指令草稿</button><span style="font-size:13px;color:var(--muted);margin-left:8px">先看內容；下一步按平台名稱就會複製這份指令</span><div data-buildout>${META.mode!=='author'&&has(store.ai_prompt)?'<pre>'+esc(store.ai_prompt)+'</pre>':''}</div></div>`;
   if(f.type==='text')return `<div class="f"><label for="${id}">${esc(lab)}${opt}</label><input type="text" id="${id}" data-k="${f.k}" data-p="${path}" value="${esc(v)}" placeholder="${esc(f.ph||'')}"></div>`;
   if(f.type==='area')return `<div class="f${f.big?' big':''}"><label for="${id}">${esc(lab)}${opt}${f.from?` <button type="button" class="btn small" data-from="${f.from}" data-to="${f.k}" style="margin-left:8px;font-weight:500">帶入 AI 回覆再修改</button>`:''}</label><textarea id="${id}" data-k="${f.k}" data-p="${path}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea></div>`;
   if(f.type==='sel')return `<div class="f"><label for="${id}">${esc(lab)}${opt}</label><select id="${id}" data-k="${f.k}" data-p="${path}">${selOptions(f,v)}</select></div>`;
@@ -1109,7 +1108,6 @@ function closePanel(){ const id=active; active=null; document.body.classList.rem
 
 $('pbody').addEventListener('input',e=>{const t=e.target; if(!t.dataset.k||t.type==='file')return; storeOf(t.dataset.p)[t.dataset.k]=t.value; changed();
   if(t.tagName==='SELECT'&&['x','y','dim','prefer'].includes(t.dataset.k))renderPanel(true);
-  if(active==='L3'&&t.dataset.k==='ai_reply'&&![1,2,3,4].some(n=>has(D.L3['q'+n]))){const r=parseQuads(t.value); if(r&&[1,2,3,4].filter(n=>r[n]).length>=3){Object.assign(D.L3,Object.fromEntries(Object.entries(r).map(([n,v])=>['q'+n,v])));changed();renderPanel(true);toast('已把 AI 回覆拆進四象限，請檢查內容')}}
   if(t.dataset.k==='by'){const h=t.closest('.entry').querySelector('h4'); h.textContent=(t.value||'第 '+(+t.dataset.p+1)+' 位同學')+'的回饋'}});
 $('pbody').addEventListener('focusin',e=>{const t=e.target; if(t.tagName!=='SELECT')return;
   const f=(BY[active].fields||[]).concat(BY[active].efields||[]).find(x=>x.k===t.dataset.k); if(!f||typeof f.options!=='function')return;
@@ -1117,8 +1115,12 @@ $('pbody').addEventListener('focusin',e=>{const t=e.target; if(t.tagName!=='SELE
 $('pbody').addEventListener('change',e=>{const t=e.target;
   if(t.dataset.img){const file=t.files[0]; if(!file)return; const rd=new FileReader(); rd.onload=()=>{const im=new Image(); im.onload=()=>{const ph=t.dataset.img==='_photo', s=Math.min(1,(ph?1100:900)/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=im.width*s; c.height=im.height*s; c.getContext('2d').drawImage(im,0,0,c.width,c.height); storeOf(t.dataset.p)[t.dataset.img]=c.toDataURL('image/jpeg',ph?.6:.82); changed(); renderPanel(true)}; im.src=rd.result}; rd.readAsDataURL(file)}
 });
-const copyPrompt=who=>{const p=D[active].ai_prompt||''; if(!has(p)){toast('還沒寫指令。先在上面寫好，再複製');return}
-  navigator.clipboard.writeText(p).then(()=>toast(who?'指令已複製，到 '+who+' 貼上送出':'指令已複製'),()=>toast('無法自動複製，請手動選取上面的指令再複製'))};
+$('pbody').addEventListener('paste',e=>{const t=e.target; if(active!=='L3'||!t.dataset||t.dataset.k!=='ai_reply')return;
+  setTimeout(()=>{D.L3.ai_reply=t.value; const r=parseQuads(t.value);
+    if(r&&[1,2,3,4].filter(n=>r[n]).length>=3){[1,2,3,4,'a','c'].forEach(n=>{D.L3['q'+n]=r[n]||''});changed();renderPanel(true);const g=$('pbody').querySelector('.qg');if(g)g.scrollIntoView({block:'start'});toast('已把 AI 回覆拆進四象限')}
+    else{changed();toast('已貼上，但找不到【象限1】到【象限4】的標題，無法自動拆。請用指令草稿重問一次，或手動填四格')}},0)});
+const copyPrompt=who=>{const p=buildPrompt(active); if(!has(p))return; D[active].ai_prompt=p; save();
+  navigator.clipboard.writeText(p).then(()=>toast(who?'指令已複製，到 '+who+' 貼上送出':'指令已複製'),()=>toast('無法自動複製。請按「用我填的內容組一份指令草稿」，再手動選取文字複製'))};
 $('pbody').addEventListener('click',e=>{
   const a=e.target.closest('a[data-ai]');
   if(a){ if(a.closest('fieldset:disabled'))return; copyPrompt(a.dataset.ai); D[active].ai_platform=a.dataset.ai; const sel=$('pbody').querySelector('select[data-k="ai_platform"]'); if(sel)sel.value=a.dataset.ai; changed(); return }
@@ -1133,7 +1135,7 @@ $('pbody').addEventListener('click',e=>{
   else if(t.dataset.rmimg){delete storeOf(t.dataset.p)[t.dataset.rmimg]; changed(); renderPanel(true)}
   else if(t.hasAttribute('data-addentry')){D[active].entries.push({}); changed(); renderPanel(true); const es=$('pbody').querySelectorAll('.entry'); es[es.length-1].scrollIntoView({block:'start'}); es[es.length-1].querySelector('input').focus()}
   else if(t.dataset.rmentry!==undefined){const i=+t.dataset.rmentry; confirmBox('刪除回饋','確定刪除這位同學的回饋嗎？',()=>{D[active].entries.splice(i,1); changed(); renderPanel(true)})}
-  else if(t.hasAttribute('data-build')){const out=t.parentNode.querySelector('[data-buildout]'); const p=buildPrompt(active); out.innerHTML=`<pre>${esc(p)}</pre><button type="button" class="btn small primary" data-use>填入「我要給 AI 的指令」</button> <button type="button" class="btn small" data-copy>只複製草稿</button>`; out.dataset.p=p}
+  else if(t.hasAttribute('data-build')){const out=t.parentNode.querySelector('[data-buildout]'); const p=buildPrompt(active); out.innerHTML='<pre>'+esc(p)+'</pre>'}
   else if(t.hasAttribute('data-copy')){const p=t.parentNode.dataset.p; navigator.clipboard.writeText(p).then(()=>toast('已複製指令草稿'),()=>toast('無法自動複製，請手動選取文字'))}
   else if(t.hasAttribute('data-use')){const p=t.parentNode.dataset.p, ta=$('pbody').querySelector('textarea[data-k="ai_prompt"]'); const put=()=>{D[active].ai_prompt=p; ta.value=p; changed(); toast('已填入，記得改成你的版本')}; has(D[active].ai_prompt)?confirmBox('覆蓋指令','「我要給 AI 的指令」已有內容，要用草稿覆蓋嗎？',put):put()}
 });
