@@ -408,13 +408,15 @@ const ISLANDS = [
     F.show('查詢島想釐清的問題',()=>[D.L2.dim&&('（'+D.L2.dim+'）'+issueText()),D.L2.question].filter(Boolean).join('\n想問：'),'先到查詢島選一件不滿意的事，並寫下具體問題'),
     F.sel('x','橫軸維度',AXES,{short:'橫軸'}),F.text('xc','自訂橫軸名稱','',{showIf:d=>d.x==='自訂',skipFace:true}),
     F.sel('y','縱軸維度',AXES,{short:'縱軸'}),F.text('yc','自訂縱軸名稱','',{showIf:d=>d.y==='自訂',skipFace:true}),
-    F.area('why','為什麼是這兩個維度','它們對釐清這個問題為什麼重要？',{short:'原因'}),
+    F.area('why','我想用這兩個維度弄清楚什麼','例如：統計不好，對我的未來和薪資報酬會有什麼影響？',{short:'想弄清楚'}),
     F.sel('focus','我想請 AI 怎麼分析',['釐清問題本身：這兩個維度下，有哪些做法或因素','連到未來職業：這兩個維度下，哪些工作方向能避開或化解這個困擾'],{short:'分析重點'}),
     F.sel('source','這兩個維度的靈感來自',()=>[0,1,2].filter(j=>has(D.L2['f'+j])).map(j=>({v:'f'+j,t:'查詢發現 '+(j+1)+'：'+cut0(D.L2['f'+j],26)})).concat([{v:'none',t:'不是來自查詢結果'}]),{short:'靈感來源',opt:true,disp:v=>v==='none'?'不是來自查詢結果':(D.L2[v]||'（那一條發現已被清空）')}),
-    ...ai('data',{note:'草稿會要求 AI 照固定的四個標題回覆，貼回後才能自動拆進四象限，標題請不要改。',replyLabel:'③ 把 AI 的回覆貼回這裡（會自動拆進下面四象限）'}),
+    ...ai('data',{note:'草稿會要求 AI 照固定的標題回覆（直接回答、象限 1 到 4、結論），貼回後才能自動拆解，標題請不要改。',replyLabel:'③ 把 AI 的回覆貼回這裡（會自動拆進下面四象限）'}),
+    F.area('qa','AI 的直接回答','貼回 AI 回覆後會自動帶入；這是 AI 對「我想弄清楚什麼」的回答',{short:'AI 直接回答',opt:true,pmax:170}),
     F.head('四象限','AI 的回覆貼回後會自動拆進四格。拆得不對，可以直接在格子裡修改。'),
     {type:'quadgrid'},
     ...[1,2,3,4].map(n=>({type:'area',k:'q'+n,label:()=>'象限 '+n+'｜'+qName(n),hidden:true,skipPoster:true,pmax:120})),
+    F.area('qc','AI 的結論','貼回 AI 回覆後會自動帶入',{short:'AI 結論',opt:true,pmax:130}),
     F.sel('prefer','我想往哪一個象限走',OPTSEL,{short:'想走向',disp:v=>'象限 '+v+'｜'+qName(+v),empty:'（先讓四象限有內容）'}),
     F.area('insight','分析後我看見什麼','',{big:true,short:'洞察'})
   ]},
@@ -536,11 +538,16 @@ function demo(){
   d.L2={dim:'未來方向',question:'資管系畢業三年內，常見的職務有哪些？各需要什麼能力？起薪大概落在哪裡？',
     ai_platform:'Gemini',ai_prompt:'請查詢台灣資訊管理學系畢業生三年內常見的職務類別、各職務需要的核心能力和起薪範圍，列出資料來源和年份，用表格呈現。我最不滿意的是：不知道資管系畢業能做什麼，也不知道現在學的有沒有用。',ai_reply:'資管系畢業三年內常見四類職務：① 系統分析師：需求訪談、流程設計。② 軟體工程師：程式開發，重視實作能力。③ 產品企劃：重視溝通、需求整理，不一定要很強的程式能力。④ 資料分析師：統計與 SQL 幾乎是必備。起薪依公司規模差異大，建議以 104 人力銀行與學校畢業生流向調查為準。（以上為 AI 整理，請自行查證）',
     f0:'常見職務有系統分析師、軟體工程師、產品企劃、資料分析師',f1:'產品企劃看重溝通和需求訪談，不一定要很強的程式能力',f2:'資料分析職缺幾乎都要求統計和 SQL',verify:'只看了 AI 的回覆',next:'產品企劃的日常工作到底在做什麼？'};
-  d.L3={x:'我的興趣',y:'我的能力',focus:'連到未來職業：這兩個維度下，哪些工作方向能避開或化解這個困擾',why:'我發現自己不滿意未來方向，是因為只想著「有沒有用」，沒想過自己喜不喜歡、做不做得來。',source:'f1',
-    ai_platform:'ChatGPT',ai_prompt:'【任務】我想釐清：資管系畢業三年內常見的職務有哪些？請用「我的興趣」當橫軸、「我的能力」當縱軸，把查到的職務和我該考慮的做法分進四個象限，每個象限 2–3 點。\n【格式】請照【象限1】到【象限4】四個標題輸出，最後加一行【結論】。',
-    ai_reply:'【象限1】我的興趣高・我的能力高\n・產品企劃：喜歡整理需求、也擅長溝通\n・系統分析：把複雜流程整理成清單\n【象限2】我的興趣低・我的能力高\n・軟體工程師：程式課成績好，但不想整天寫程式\n【象限3】我的興趣低・我的能力低\n・純硬體或網管維運：目前沒接觸也沒興趣\n【象限4】我的興趣高・我的能力低\n・資料分析師：有興趣，但統計是最弱的一科\n【結論】優先看象限1，先用訪談確認產品企劃的日常是不是你想像的樣子。',
-    q1:'・產品企劃：喜歡整理需求、也擅長溝通\n・系統分析：把複雜流程整理成清單',q2:'・軟體工程師：程式課成績好，但不想整天寫程式',q3:'・純硬體或網管維運：目前沒接觸也沒興趣',q4:'・資料分析師：有興趣，但統計是最弱的一科',
-    prefer:'1',insight:'產品企劃落在興趣和能力都高的那一格。資料分析我有興趣，但統計是我最弱的一科，這和我在現況島寫的不滿意剛好對上。'};
+  const q3={qa:'你不是沒有出路，而是還沒把「喜歡」和「做得來」分開看。把兩者放在一起，最值得先了解的是產品企劃和系統分析這類工作。',
+    q1:'情境：你喜歡、也做得來的工作，例如產品企劃、系統分析。\n和我的困擾的關係：這一格最能回答「畢業能做什麼」，你現在學的溝通和整理能力都用得上。\n我可以做的事：約一位做產品企劃的學姐，問她每天在做什麼。',
+    q2:'情境：你做得來、但沒那麼喜歡的工作，例如軟體工程師。\n和我的困擾的關係：它可以當保底，但做久了可能又回到「不知道為什麼而做」。\n我可以做的事：把程式能力維持住，先不急著排除。',
+    q3:'情境：你不喜歡、目前也做不來的工作，例如硬體或網管維運。\n和我的困擾的關係：這一格可以先放下，不需要為它焦慮。\n我可以做的事：不用特別投入時間。',
+    q4:'情境：你有興趣、但能力還不夠的工作，例如資料分析師。\n和我的困擾的關係：卡住你的是統計，這和你在現況島寫的不滿意是同一件事。\n我可以做的事：每週去一次統計助教時間，兩個月後再評估。',
+    qc:'你現在最可能在象限 4 和象限 1 之間。建議先往象限 1 走，因為它不需要等統計補好就能開始了解。'};
+  d.L3=Object.assign({x:'我的興趣',y:'我的能力',focus:'連到未來職業：這兩個維度下，哪些工作方向能避開或化解這個困擾',why:'在我有興趣、也做得來的範圍裡，資管系到底有哪些出路？哪些其實不適合我？',source:'f1',
+    ai_platform:'ChatGPT',ai_prompt:'【我現在最想弄清楚的】在我有興趣、也做得來的範圍裡，資管系到底有哪些出路？\n【分析方式】橫軸「我的興趣」、縱軸「我的能力」，高低組合成四個象限，各說明代表哪些工作、和我的困擾的關係、我可以做的一件事。\n【格式】【直接回答】【象限1】到【象限4】【結論】',
+    ai_reply:'【直接回答】\n'+q3.qa+'\n【象限1】我的興趣高・我的能力高\n'+q3.q1+'\n【象限2】我的興趣低・我的能力高\n'+q3.q2+'\n【象限3】我的興趣低・我的能力低\n'+q3.q3+'\n【象限4】我的興趣高・我的能力低\n'+q3.q4+'\n【結論】\n'+q3.qc,
+    prefer:'1',insight:'產品企劃落在興趣和能力都高的那一格。資料分析我有興趣，但統計是我最弱的一科，這和我在現況島寫的不滿意剛好對上。'},q3);
   d.L4={years:'5 年後',option:'1',place:'台北一間新創公司的會議室，白板上貼滿便利貼',doing:'站在白板前和工程師討論下一版功能',who:'三位團隊夥伴',style:'3D 黏土風',mood:'午後、專注、有笑聲',
     ai_platform:'ChatGPT',ai_prompt:'3D 黏土風插畫。台北新創公司的會議室，午後陽光從窗戶照進來。一位 25 歲的女性產品企劃站在貼滿彩色便利貼的白板前，正和三位同事討論，大家表情專注又帶著笑。暖色調，橫式 16:9。',
     feel:'原來我想像的畫面裡，我是站著說話的那個人。我以前都以為自己只適合坐在電腦前。'};
@@ -721,7 +728,7 @@ const TILES={
  L0:[{label:'我是誰',b:'dock',jump:'name',img:d=>d.photo,v:d=>[d.name,d.school,d.year].filter(Boolean).join('｜')},{label:'自我介紹',b:'house',jump:'intro',v:d=>d.intro},{label:'AI 熟悉度',b:'tower',jump:'mainAI',v:d=>[has(d.aiLevel)?d.aiLevel+' / 5':'',d.mainAI&&('常用 '+d.mainAI)].filter(Boolean).join('，')}],
  L1:[{label:'現況摘要',b:'hall',jump:'summary',v:d=>d.summary},dimTile(0,'school'),dimTile(1,'shop'),dimTile(2,'pool'),dimTile(3,'dome'),aiTile],
  L2:[{label:'我的問題',b:'hall',jump:'dim',v:d=>[d.dim&&(d.dim+'：'+issueText()),d.question&&('想問：'+d.question)].filter(Boolean).join('｜')},{label:'發現 1',b:'house',jump:'f0',v:d=>d.f0},{label:'發現 2',b:'shop',jump:'f1',v:d=>d.f1},{label:'發現 3',b:'house',jump:'f2',v:d=>d.f2},{label:'來源查證',b:'tower',jump:'verify',v:d=>d.verify},aiTile],
- L3:[{label:'兩個維度',b:'chart',jump:'x',v:d=>has(d.x)||has(d.y)?[axName(d,'x')+' × '+axName(d,'y'),d.why].filter(Boolean).join('｜'):''},
+ L3:[{label:'兩個維度',b:'chart',jump:'x',v:d=>has(d.x)||has(d.y)?[axName(d,'x')+' × '+axName(d,'y'),d.qa?('AI 回答：'+d.qa):d.why].filter(Boolean).join('｜'):''},
    ...[1,2,3,4].map(n=>({label:()=>'象限 '+n+'｜'+qName(n),b:['house','shop','tent','house'][n-1],jump:'q'+n,v:d=>d['q'+n]})),
    {label:'我的洞察',b:'dome',jump:'insight',v:d=>[has(d.prefer)&&('想走向象限 '+d.prefer),d.insight].filter(Boolean).join('｜')},aiTile],
  L4:[{label:'未來畫面',b:'billboard',jump:'years',img:d=>d.image,v:d=>[d.years,has(d.option)&&('象限 '+d.option),d.place,d.doing].filter(Boolean).join('｜')},{label:'風格氛圍',b:'shop',jump:'style',v:d=>[d.style,d.mood].filter(Boolean).join('｜')},{label:'我的感受',b:'house',jump:'feel',v:d=>d.feel},aiTile],
@@ -941,7 +948,7 @@ function hintFor(id){
   const L3=D.L3; let h='';
   const box=(cls,t)=>`<div class="hint ${cls}">${t}</div>`;
   if(id==='L2'&&![0,1,2,3].some(i=>has(D.L1['b'+i]))) h+=box('warn','現況島還沒寫任何不滿意的事。先回現況島寫，這裡的下拉選單才有選項。');
-  if(id==='L3'){ const f=[0,1,2].map(j=>D.L2['f'+j]).filter(Boolean); h+= f.length?box('',`查詢島的發現：${f.map(esc).join('；')}。<br>想一想：哪兩個維度，能幫你把這些資訊分出輕重？`):box('warn','查詢島還沒有關鍵發現。先查再分析，維度會選得更有根據。') }
+  if(id==='L3'){ const f=[0,1,2].map(j=>D.L2['f'+j]).filter(Boolean); h+= f.length?box('',`查詢島的發現：${f.map(esc).join('；')}。<br>想一想：你想從哪兩個角度，把這個問題看清楚？`):box('warn','查詢島還沒有關鍵發現。先查再分析，維度會選得更有根據。') }
   if(id==='L4'){ h+= optName(L3.prefer)?box('',`你在分析島想走向 <b>象限 ${esc(L3.prefer)}｜${esc(optName(L3.prefer))}</b>：${esc(cut0(L3['q'+L3.prefer],60))}<br>把它畫成 ${esc(D.L4.years||'幾年後')} 的一天。`):box('warn','分析島還沒選出想走向的象限。') }
   if(id==='L5'){ h+= has(D.L4.doing)?box('',`圖像島的畫面：${esc(D.L4.place||'')}，${esc(D.L4.doing)}。第三幕就是這個畫面。`):box('warn','圖像島還沒寫未來畫面。第三幕會用到它。') }
   if(id==='L6'){ if(has(D.L2.dim))h+=box('',`你一開始想處理的不滿意：<b>${esc(D.L2.dim)}</b>｜${esc(cut0(issueText(),50))}<br>至少安排一個行動回應它。`); if(has(D.L5.a2))h+=box('',`影片第二幕的轉折：${esc(D.L5.a2)}`) }
@@ -953,8 +960,16 @@ function buildPrompt(id){
   const d=D[id], L1=D.L1, L3=D.L3;
   if(id==='L1') return '【角色】你是大學生的職涯導師。\n【任務】把我寫的四個生活面向整理成一段 150 字以內的現況摘要。\n【參考資料】\n'+DIMS.map((n,i)=>`${n}：${L1['s'+i]||'?'} 分。滿意：${L1['g'+i]||'（未填）'}。不滿意：${L1['b'+i]||'（未填）'}。`).join('\n')+'\n【格式】用第一人稱，保留我寫的具體事件，不要加入我沒寫的內容。最後指出我最需要優先處理的一個面向。';
   if(id==='L2') return '【角色】你是熟悉台灣大學生處境與就業市場的顧問。\n【任務】'+(d.question||'（先填上你想問的具體問題）')+'\n【參考資料】我是'+(D.L0.school||'大學生')+' '+(D.L0.year||'')+'。我在「'+(d.dim||'（先選一個面向）')+'」這個面向最不滿意的是：'+(issueText()||'（未填）')+'\n【格式】列出三到五個重點，每點附上資料來源名稱、年份和連結。不確定的地方直接說不確定。';
-  if(id==='L3'){const X=axName(d,'x')||'（橫軸）',Y=axName(d,'y')||'（縱軸）',fs=[0,1,2].map(j=>D.L2['f'+j]).filter(Boolean);
-    return '【角色】你是擅長用二維矩陣整理資訊的分析教練。\n【任務】我正在釐清一個問題：'+(D.L2.question||'（先到查詢島寫下問題）')+'\n起因是我在「'+(D.L2.dim||'')+'」最不滿意的事：'+(issueText()||'（未填）')+'\n'+(String(d.focus||'').indexOf('連到')===0?'請用「'+X+'」當橫軸、「'+Y+'」當縱軸，分析在高低四種組合下，各有哪些類型的工作或發展方向。每個象限列 2–3 個，並用一句話說明它和我這個困擾的關係：會讓困擾更明顯、可以避開，還是需要我先補上什麼。':'請用「'+X+'」當橫軸、「'+Y+'」當縱軸，針對我這個困擾和問題做分析：把參考資料裡的資訊，加上你認為我還該考慮的做法或因素，分進高低四種組合的象限。每個象限 2–3 點，並說明它對解決這個困擾的意義。')+'每點不超過 30 個字。\n【參考資料】\n我整理的查詢發現：'+(fs.join('；')||'（尚未整理）')+'\n先前 AI 的查詢回覆：'+(cut0(D.L2.ai_reply,400)||'（無）')+'\n我選這兩個維度的原因：'+(d.why||'（未填）')+'\n【格式】請完全照下面的標題輸出，標題不要改、不要加其他標題，我要貼回系統自動拆解：\n【象限1】'+X+'高・'+Y+'高\n【象限2】'+X+'低・'+Y+'高\n【象限3】'+X+'低・'+Y+'低\n【象限4】'+X+'高・'+Y+'低\n【結論】用一句話說我最該優先看哪一個象限，為什麼。'}
+  if(id==='L3'){const X=axName(d,'x')||'（橫軸）',Y=axName(d,'y')||'（縱軸）',fs=[0,1,2].map(j=>D.L2['f'+j]).filter(Boolean),job=String(d.focus||'').indexOf('連到')===0,rel=job?'和我的困擾的關係：':'對我的意義：';
+    return '【角色】你是陪大學生把問題想清楚的教練。說話白話、具體，不用術語縮寫。\n'
+     +'【我的狀況】我在「'+(D.L2.dim||'（面向）')+'」最不滿意的事：'+(issueText()||'（未填）')+'\n我原本想問：'+(D.L2.question||'（先到查詢島寫下問題）')+'\n'
+     +'【我現在最想弄清楚的】'+(d.why||'（先寫下你想用這兩個維度弄清楚什麼）')+'\n'
+     +'【分析方式】請從兩個角度看我的狀況：橫軸「'+X+'」、縱軸「'+Y+'」，高低兩兩組合成四種情況（四個象限）。\n'
+     +(job?'每個象限請說明：這一格代表哪些類型的工作或發展方向（舉兩三個例子）；它和我這個困擾的關係（會讓困擾更明顯、可以避開，還是要先補上什麼）；我現在可以做的一件事。\n'
+          :'每個象限請說明：這一格具體是指什麼狀況；如果我是這種狀況，我的困擾會帶來什麼結果；我現在可以做的一件事。\n')
+     +(fs.length?'【背景】我已經查到的重點（只當背景，不要照抄，也不要讓它主導分析）：'+fs.join('；')+'\n':'')
+     +'【寫法】一律用完整的句子，讓大學生一看就懂。\n・「直接回答」寫兩三句，直接回答我現在最想弄清楚的事。\n・每個象限寫三行，分別用「情境：」「'+rel+'」「我可以做的事：」開頭，每行一到兩句。\n・「結論」寫兩句：我現在最可能在哪一格、建議我往哪一格走，並說明原因。\n'
+     +'【格式】請只輸出下面六個標題和內容，標題原樣照抄、不要增減，我要貼回系統自動拆解：\n【直接回答】\n【象限1】'+X+'高・'+Y+'高\n【象限2】'+X+'低・'+Y+'高\n【象限3】'+X+'低・'+Y+'低\n【象限4】'+X+'高・'+Y+'低\n【結論】'}
   if(id==='L4') return (d.style||'插畫')+'。'+(d.place||'（場景）')+'。'+(d.years||'幾年後')+'的我，正在'+(d.doing||'（做什麼）')+(d.who?'，身邊有'+d.who:'')+'。這個畫面要呈現的狀態：'+(has(d.option)?qName(+d.option)+'；'+cut0(L3['q'+d.option],60):'（先選對應的象限）')+'。氛圍：'+(d.mood||'溫暖')+'。橫式 16:9，畫面乾淨，不要出現文字。';
   if(id==='L5') return (d.len||'15 秒')+'短片，三個鏡頭，風格一致。\n鏡頭一：'+(d.a1||'（現在的我）')+'\n鏡頭二：'+(d.a2||'（關鍵轉折）')+'\n鏡頭三：'+(d.a3||'（未來的我）')+'\n結尾字幕：'+(d.line||'（金句）')+'\n色調溫暖，鏡頭平穩，主角前後是同一個人。';
   if(id==='L6') return '【角色】你是文字編輯。\n【任務】把我的宣言改得更口語、更有力，給我三個版本，每個不超過 30 字。\n【參考資料】原始宣言：'+(d.motto||'（未填）')+'\n我的行動：'+[0,1,2].map(j=>d['a'+j]).filter(Boolean).join('；')+'\n【格式】三個版本各一行，並說明你改了什麼。';
@@ -987,16 +1002,18 @@ function selOptions(f,v){
 }
 function parseQuads(txt){
   txt=String(txt||''); const num={'一':1,'二':2,'三':3,'四':4,'①':1,'②':2,'③':3,'④':4,'1':1,'2':2,'3':3,'4':4,'１':1,'２':2,'３':3,'４':4};
-  const marks=[]; let m; const re1=/【\s*(?:第\s*)?(?:象限\s*)?([1-4１-４一二三四①②③④])\s*(?:象限)?\s*】/g;
-  while((m=re1.exec(txt)))marks.push({n:num[m[1]],i:m.index,e:m.index+m[0].length});
-  if(marks.length<2){marks.length=0; const re2=/(?:^|\n)[ \t#*>\-]*(?:第\s*([1-4一二三四])\s*象限|象限\s*([1-4１-４一二三四①②③④]))[^\n]*/g;
-    while((m=re2.exec(txt)))marks.push({n:num[m[1]||m[2]],i:m.index,e:m.index+m[0].length,line:true})}
-  if(!marks.length)return null; const out={};
+  const marks=[], isQ=k=>typeof k.n==='number'; let m;
+  const re1=/【\s*(?:(?:第\s*)?(?:象限\s*)?([1-4１-４一二三四①②③④])\s*(?:象限)?|(直接回答|結論))\s*】/g;
+  while((m=re1.exec(txt)))marks.push({n:m[2]?(m[2]==='結論'?'c':'a'):num[m[1]],i:m.index,e:m.index+m[0].length});
+  if(marks.filter(isQ).length<2){marks.length=0; const re2=/(?:^|\n)[ \t#*>\-]*(?:第\s*([1-4一二三四])\s*象限|象限\s*([1-4１-４一二三四①②③④])|(直接回答|結論))[^\n]*/g;
+    while((m=re2.exec(txt))){ if(m[3])marks.push({n:m[3]==='結論'?'c':'a',i:m.index,e:m.index+m[0].indexOf(m[3])+m[3].length}); else marks.push({n:num[m[1]||m[2]],i:m.index,e:m.index+m[0].length,line:true}) }}
+  if(!marks.some(isQ))return null; const out={};
   marks.forEach((k,ix)=>{ let end=ix+1<marks.length?marks[ix+1].i:txt.length; const stop=txt.slice(k.e,end).search(/【[^】\n]{1,12}】/); if(stop>=0)end=k.e+stop;
-    const ls=txt.slice(k.e,end).replace(/\*\*/g,'').trim().split('\n');
-    if(!k.line&&ls.length&&/[高低]/.test(ls[0])&&ls[0].length<=40&&!/^\s*[・\-•\d]/.test(ls[0]))ls.shift();
-    const body=ls.join('\n').replace(/\n[ \t#*>\-]*結論[\s\S]*$/,'').replace(/^[\s:：]+/,'').trim(); if(body&&!out[k.n])out[k.n]=body });
-  return Object.keys(out).length?out:null;
+    const ls=txt.slice(k.e,end).replace(/\*\*/g,'').replace(/^[\s:：]+/,'').split('\n');
+    if(isQ(k)&&!k.line&&ls.length>1&&/[高低]/.test(ls[0])&&ls[0].length<=40&&!/^\s*[・\-•\d]|[：:]/.test(ls[0]))ls.shift();
+    if(!isQ(k)&&ls.length>1&&/^\s*[（(].*[）)]\s*$/.test(ls[0]))ls.shift();
+    const body=ls.map(l=>l.replace(/^\s*[-•・]\s*/,'')).join('\n').replace(/^[\s:：]+/,'').replace(/\n{3,}/g,'\n\n').trim(); if(body&&!out[k.n])out[k.n]=body });
+  return out;
 }
 /* 拍照代入：辨識由學生自己用的 AI 平台完成，這裡負責出指令、收結果、填欄位 */
 const IMP_SKIP=['source','xc','yc','ai_model'];
@@ -1092,7 +1109,7 @@ function closePanel(){ const id=active; active=null; document.body.classList.rem
 
 $('pbody').addEventListener('input',e=>{const t=e.target; if(!t.dataset.k||t.type==='file')return; storeOf(t.dataset.p)[t.dataset.k]=t.value; changed();
   if(t.tagName==='SELECT'&&['x','y','dim','prefer'].includes(t.dataset.k))renderPanel(true);
-  if(active==='L3'&&t.dataset.k==='ai_reply'&&![1,2,3,4].some(n=>has(D.L3['q'+n]))){const r=parseQuads(t.value); if(r&&Object.keys(r).length>=3){Object.assign(D.L3,Object.fromEntries(Object.entries(r).map(([n,v])=>['q'+n,v])));changed();renderPanel(true);toast('已把 AI 回覆拆進四象限，請檢查內容')}}
+  if(active==='L3'&&t.dataset.k==='ai_reply'&&![1,2,3,4].some(n=>has(D.L3['q'+n]))){const r=parseQuads(t.value); if(r&&[1,2,3,4].filter(n=>r[n]).length>=3){Object.assign(D.L3,Object.fromEntries(Object.entries(r).map(([n,v])=>['q'+n,v])));changed();renderPanel(true);toast('已把 AI 回覆拆進四象限，請檢查內容')}}
   if(t.dataset.k==='by'){const h=t.closest('.entry').querySelector('h4'); h.textContent=(t.value||'第 '+(+t.dataset.p+1)+' 位同學')+'的回饋'}});
 $('pbody').addEventListener('focusin',e=>{const t=e.target; if(t.tagName!=='SELECT')return;
   const f=(BY[active].fields||[]).concat(BY[active].efields||[]).find(x=>x.k===t.dataset.k); if(!f||typeof f.options!=='function')return;
@@ -1108,7 +1125,7 @@ $('pbody').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t||t.closest('fieldset:disabled'))return;
   if(t.hasAttribute('data-copyprompt')){copyPrompt('');return}
   if(t.hasAttribute('data-splitq')){ const r=parseQuads(D.L3.ai_reply); if(!r){toast('在 AI 回覆裡找不到【象限1】到【象限4】的標題。請用草稿指令重問一次，或手動把內容貼進四格');return}
-    const put=()=>{[1,2,3,4].forEach(n=>{if(r[n])D.L3['q'+n]=r[n]});changed();renderPanel(true);toast('已拆進 '+Object.keys(r).length+' 個象限')}; [1,2,3,4].some(n=>has(D.L3['q'+n]))?confirmBox('覆蓋四象限','四象限已有內容，要用 AI 回覆重新拆一次嗎？',put):put(); return }
+    const put=()=>{[1,2,3,4,'a','c'].forEach(n=>{if(r[n])D.L3['q'+n]=r[n]});changed();renderPanel(true);toast('已拆進 '+[1,2,3,4].filter(n=>r[n]).length+' 個象限')}; [1,2,3,4].some(n=>has(D.L3['q'+n]))?confirmBox('覆蓋四象限','四象限已有內容，要用 AI 回覆重新拆一次嗎？',put):put(); return }
   if(t.dataset.from){ const d=D[active], src=d[t.dataset.from], ta=$('pbody').querySelector('textarea[data-k="'+t.dataset.to+'"]'); if(!has(src)){toast('還沒貼回 AI 的回覆');return}
     const put=()=>{d[t.dataset.to]=src; ta.value=src; changed(); ta.focus(); toast('已帶入，請改成你自己的話')}; has(d[t.dataset.to])?confirmBox('覆蓋內容','這一格已經有內容，要用 AI 回覆覆蓋嗎？',put):put(); return }
   if(t.dataset.score){const st=storeOf(t.dataset.p), v=+t.dataset.score; st[t.dataset.k]= st[t.dataset.k]===v?'':v; t.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.score===st[t.dataset.k])); changed()}
