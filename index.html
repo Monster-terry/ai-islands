@@ -347,12 +347,12 @@ const AILINKS=[['Claude','https://claude.ai/new'],['ChatGPT','https://chatgpt.co
 function ai(scene,o){
   o=o||{};
   return [
-    F.head('請 AI 幫忙','三步驟：① 看系統用你填的內容組好的指令　② 複製後前往平台貼上　③ 把 AI 的回覆貼回來。'+(o.note||'')),
+    F.head('請 AI 幫忙','三步驟：① 看系統用你填的內容組好的指令　② 複製後前往平台貼上　'+(o.step3||'③ 把 AI 的回覆貼回來。')+(o.note||'')),
     F.builder(),
     {type:'ailinks'},
     F.sel('ai_platform','我這次用的平台',AILINKS.map(a=>a[0]).concat(['其他']),{short:'平台',opt:true}),
     F.area('ai_reply',o.replyLabel||'③ 把 AI 的回覆貼回這裡','在平台拿到回覆後，整段複製回來貼上。貼好後會出現在島上。',{big:true,short:'AI 回覆',pmax:170,opt:!!o.replyOpt})
-  ];
+  ].filter(f=>!(o.noReply&&f.k==='ai_reply'));
 }
 const cut0=(t,n)=>{t=String(t==null?'':t).replace(/\s+/g,' ');return t.length>n?t.slice(0,n)+'…':t};
 const issueText=()=>{const i=DIMS.indexOf(D.L2.dim);return i>=0?String(D.L1['b'+i]||''):''};
@@ -421,7 +421,7 @@ const ISLANDS = [
   ]},
  {id:'L4',side:'self',quad:'hidden',no:'4',name:'圖像島',scene:'圖片生成',q:-3,r:3,
   ask:'走到你想去的那個象限，那一天長什麼樣子？',
-  intro:'把分析島你想走向的象限，變成一張看得見的畫面。描述越具體，圖越接近你心裡的樣子。',
+  intro:'選好象限後，場景、正在做什麼、身邊有誰和氛圍會依那一格的內容自動帶入，你可以再改。把分析島你想走向的象限，變成一張看得見的畫面。描述越具體，圖越接近你心裡的樣子。',
   req:['years','option','place','doing','style','feel'],
   fields:[
     F.sel('years','這是幾年後的我',['3 年後','5 年後','10 年後'],{short:'時間'}),
@@ -431,7 +431,8 @@ const ISLANDS = [
     F.text('who','身邊有誰','',{short:'身邊的人',opt:true}),
     F.sel('style','畫面風格',['寫實攝影','水彩插畫','3D 黏土風','日系動畫風','電影劇照感','像素風'],{short:'風格'}),
     F.text('mood','氛圍關鍵字','例如：清晨、安靜、有成就感',{short:'氛圍',opt:true}),
-    ...ai('image',{note:'不是每個平台都能生成圖片，生不出來就換一個試。',replyLabel:'AI 的文字回覆（選填）',replyOpt:true}),
+    F.img('selfie','上傳自己的照片（選填）',{opt:true,note:'有上傳的話，複製指令時會連照片一起複製，讓 AI 照你的樣子畫主角。'}),
+    ...ai('image',{note:'不是每個平台都能生成圖片，生不出來就換一個試。',noReply:true,step3:'③ 把 AI 生成的圖上傳回來。'}),
     F.img('image','③ 上傳 AI 生成的圖片',{opt:true}),
     F.area('feel','看著這張圖，我感受到','',{short:'感受'})
   ]},
@@ -538,10 +539,10 @@ function demo(){
     ai_platform:'Gemini',ai_prompt:'請查詢台灣資訊管理學系畢業生三年內常見的職務類別、各職務需要的核心能力和起薪範圍，列出資料來源和年份，用表格呈現。我最不滿意的是：不知道資管系畢業能做什麼，也不知道現在學的有沒有用。',ai_reply:'資管系畢業三年內常見四類職務：① 系統分析師：需求訪談、流程設計。② 軟體工程師：程式開發，重視實作能力。③ 產品企劃：重視溝通、需求整理，不一定要很強的程式能力。④ 資料分析師：統計與 SQL 幾乎是必備。起薪依公司規模差異大，建議以 104 人力銀行與學校畢業生流向調查為準。（以上為 AI 整理，請自行查證）',
     f0:'常見職務有系統分析師、軟體工程師、產品企劃、資料分析師',f1:'產品企劃看重溝通和需求訪談，不一定要很強的程式能力',f2:'資料分析職缺幾乎都要求統計和 SQL',verify:'只看了 AI 的回覆',next:'產品企劃的日常工作到底在做什麼？'};
   const q3={qa:'你不是沒有出路，而是還沒把「喜歡」和「做得來」分開看。把兩者放在一起，最值得先了解的是產品企劃和系統分析這類工作。',
-    q1:'情境：你喜歡、也做得來的工作，例如產品企劃、系統分析。\n和我的困擾的關係：這一格最能回答「畢業能做什麼」，你現在學的溝通和整理能力都用得上。\n我可以做的事：約一位做產品企劃的學姐，問她每天在做什麼。',
-    q2:'情境：你做得來、但沒那麼喜歡的工作，例如軟體工程師。\n和我的困擾的關係：它可以當保底，但做久了可能又回到「不知道為什麼而做」。\n我可以做的事：把程式能力維持住，先不急著排除。',
-    q3:'情境：你不喜歡、目前也做不來的工作，例如硬體或網管維運。\n和我的困擾的關係：這一格可以先放下，不需要為它焦慮。\n我可以做的事：不用特別投入時間。',
-    q4:'情境：你有興趣、但能力還不夠的工作，例如資料分析師。\n和我的困擾的關係：卡住你的是統計，這和你在現況島寫的不滿意是同一件事。\n我可以做的事：每週去一次統計助教時間，兩個月後再評估。',
+    q1:'情境：你喜歡、也做得來的工作，例如產品企劃、系統分析。\n和我的困擾的關係：這一格最能回答「畢業能做什麼」，你現在學的溝通和整理能力都用得上。\n我可以做的事：約一位做產品企劃的學姐，問她每天在做什麼。\n未來畫面：場景：台北一間新創公司的會議室，白板上貼滿便利貼｜正在做：站在白板前和工程師討論下一版功能｜身邊有：三位團隊夥伴｜氛圍：午後、專注、有笑聲',
+    q2:'情境：你做得來、但沒那麼喜歡的工作，例如軟體工程師。\n和我的困擾的關係：它可以當保底，但做久了可能又回到「不知道為什麼而做」。\n我可以做的事：把程式能力維持住，先不急著排除。\n未來畫面：場景：科技公司的開放式辦公區｜正在做：戴著耳機寫程式、偶爾看一眼窗外｜身邊有：各自忙碌的同事｜氛圍：安靜、規律、有點悶',
+    q3:'情境：你不喜歡、目前也做不來的工作，例如硬體或網管維運。\n和我的困擾的關係：這一格可以先放下，不需要為它焦慮。\n我可以做的事：不用特別投入時間。\n未來畫面：場景：機房旁的小辦公室｜正在做：盯著監控畫面等警示｜身邊有：一位值班同事｜氛圍：冷氣很強、時間過得很慢',
+    q4:'情境：你有興趣、但能力還不夠的工作，例如資料分析師。\n和我的困擾的關係：卡住你的是統計，這和你在現況島寫的不滿意是同一件事。\n我可以做的事：每週去一次統計助教時間，兩個月後再評估。\n未來畫面：場景：靠窗的辦公桌，螢幕上是圖表｜正在做：向主管解釋一張分析圖｜身邊有：兩位願意教我的前輩｜氛圍：緊張但踏實',
     qc:'你現在最可能在象限 4 和象限 1 之間。建議先往象限 1 走，因為它不需要等統計補好就能開始了解。'};
   d.L3=Object.assign({x:'我的興趣',y:'我的能力',focus:'連到未來職業：這兩個維度下，哪些工作方向能避開或化解這個困擾',why:'在我有興趣、也做得來的範圍裡，資管系到底有哪些出路？哪些其實不適合我？',source:'f1',
     ai_platform:'ChatGPT',ai_prompt:'【我現在最想弄清楚的】在我有興趣、也做得來的範圍裡，資管系到底有哪些出路？\n【分析方式】橫軸「我的興趣」、縱軸「我的能力」，高低組合成四個象限，各說明代表哪些工作、和我的困擾的關係、我可以做的一件事。\n【格式】【直接回答】【象限1】到【象限4】【結論】',
@@ -967,9 +968,10 @@ function buildPrompt(id){
      +(job?'每個象限請說明：這一格代表哪些類型的工作或發展方向（舉兩三個例子）；它和我這個困擾的關係（會讓困擾更明顯、可以避開，還是要先補上什麼）；我現在可以做的一件事。\n'
           :'每個象限請說明：這一格具體是指什麼狀況；如果我是這種狀況，我的困擾會帶來什麼結果；我現在可以做的一件事。\n')
      +(fs.length?'【背景】我已經查到的重點（只當背景，不要照抄，也不要讓它主導分析）：'+fs.join('；')+'\n':'')
-     +'【寫法】一律用完整的句子，讓大學生一看就懂。\n・「直接回答」寫兩三句，直接回答我現在最想弄清楚的事。\n・每個象限寫三行，分別用「情境：」「'+rel+'」「我可以做的事：」開頭，每行一到兩句。\n・「結論」寫兩句：我現在最可能在哪一格、建議我往哪一格走，並說明原因。\n'
+     +'【寫法】一律用完整的句子，讓大學生一看就懂。\n・「直接回答」寫兩三句，直接回答我現在最想弄清楚的事。\n・每個象限寫四行。前三行分別用「情境：」「'+rel+'」「我可以做的事：」開頭，每行一到兩句。\n・第四行用「未來畫面：」開頭：想像幾年後我處在這一格的某一天，照這個格式寫成一行　場景：…｜正在做：…｜身邊有：…｜氛圍：…\n・「結論」寫兩句：我現在最可能在哪一格、建議我往哪一格走，並說明原因。\n'
      +'【格式】請只輸出下面六個標題和內容，標題原樣照抄、不要增減，我要貼回系統自動拆解：\n【直接回答】\n【象限1】'+X+'高・'+Y+'高\n【象限2】'+X+'低・'+Y+'高\n【象限3】'+X+'低・'+Y+'低\n【象限4】'+X+'高・'+Y+'低\n【結論】'}
-  if(id==='L4') return (d.style||'插畫')+'。'+(d.place||'（場景）')+'。'+(d.years||'幾年後')+'的我，正在'+(d.doing||'（做什麼）')+(d.who?'，身邊有'+d.who:'')+'。這個畫面要呈現的狀態：'+(has(d.option)?qName(+d.option)+'；'+cut0(L3['q'+d.option],60):'（先選對應的象限）')+'。氛圍：'+(d.mood||'溫暖')+'。橫式 16:9，畫面乾淨，不要出現文字。';
+  if(id==='L4'){const qt=has(d.option)?String(L3['q'+d.option]||''):'', sit=String((qt.match(/情境\s*[：:]\s*([^\n]+)/)||[])[1]||cut0(qt,60)).replace(/[。.\s]+$/,'');
+    return (d.style||'插畫')+'。'+(d.place||'（場景）')+'。'+(d.years||'幾年後')+'的我，正在'+(d.doing||'（做什麼）')+(d.who?'，身邊有'+d.who:'')+'。'+(has(d.option)?'這個畫面要呈現的狀態：'+sit+'。':'')+'氛圍：'+(d.mood||'溫暖')+'。'+(has(d.selfie)?'主角請參考我附上的照片，保留我的長相特徵。':'')+'橫式 16:9，畫面乾淨，不要出現文字。'}
   if(id==='L5') return (d.len||'15 秒')+'短片，三個鏡頭，風格一致。\n鏡頭一：'+(d.a1||'（現在的我）')+'\n鏡頭二：'+(d.a2||'（關鍵轉折）')+'\n鏡頭三：'+(d.a3||'（未來的我）')+'\n結尾字幕：'+(d.line||'（金句）')+'\n色調溫暖，鏡頭平穩，主角前後是同一個人。';
   if(id==='L6') return '【角色】你是文字編輯。\n【任務】把我的宣言改得更口語、更有力，給我三個版本，每個不超過 30 字。\n【參考資料】原始宣言：'+(d.motto||'（未填）')+'\n我的行動：'+[0,1,2].map(j=>d['a'+j]).filter(Boolean).join('；')+'\n【格式】三個版本各一行，並說明你改了什麼。';
   return '';
@@ -987,11 +989,11 @@ function fieldHTML(f,store,path){
   if(f.type==='area')return `<div class="f${f.big?' big':''}"><label for="${id}">${esc(lab)}${opt}${f.from?` <button type="button" class="btn small" data-from="${f.from}" data-to="${f.k}" style="margin-left:8px;font-weight:500">帶入 AI 回覆再修改</button>`:''}</label><textarea id="${id}" data-k="${f.k}" data-p="${path}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea></div>`;
   if(f.type==='sel')return `<div class="f"><label for="${id}">${esc(lab)}${opt}</label><select id="${id}" data-k="${f.k}" data-p="${path}">${selOptions(f,v)}</select></div>`;
   if(f.type==='show'){const sv=f.fn(store);return `<div class="f"><span class="lab">${esc(lab)} <small>自動帶入</small></span><div class="showbox${sv?'':' none'}">${esc(sv||f.ph||'')}</div></div>`}
-  if(f.type==='ailinks')return `<div class="f"><span class="lab">② 複製指令，前往平台貼上</span><div class="ailinks">${AILINKS.map(a=>`<a class="btn small" href="${a[1]}" target="_blank" rel="noopener" data-ai="${a[0]}">${a[0]} ↗</a>`).join('')}<button type="button" class="btn small" data-copyprompt>只複製指令</button></div><p class="note">點平台名稱會先幫你複製指令，再用新分頁開啟平台。貼上送出、拿到回覆後，回到這一頁貼在下面。</p></div>`;
+  if(f.type==='ailinks')return `<div class="f"><span class="lab">② 複製指令，前往平台貼上</span><div class="ailinks">${AILINKS.map(a=>`<a class="btn small" href="${a[1]}" target="_blank" rel="noopener" data-ai="${a[0]}">${a[0]} ↗</a>`).join('')}<button type="button" class="btn small" data-copyprompt>只複製指令</button>${active==='L4'&&has(D.L4.selfie)?'<button type="button" class="btn small" data-copyphoto>只複製照片</button>':''}</div><p class="note">${active==='L4'?(has(D.L4.selfie)?'你有上傳照片：點平台名稱或「只複製指令」時，指令和照片會一起複製。到平台的輸入框貼上，照片和文字會一起出現；如果只出現一樣，再用另一顆按鈕補貼。':'點平台名稱會先幫你複製指令，再用新分頁開啟平台。貼上送出、拿到圖片後，回到這一頁上傳。'):'點平台名稱會先幫你複製指令，再用新分頁開啟平台。貼上送出、拿到回覆後，回到這一頁貼在下面。'}</p></div>`;
   if(f.type==='score'){let b='';for(let i=1;i<=f.max;i++)b+=`<button type="button" data-score="${i}" data-k="${f.k}" data-p="${path}" aria-pressed="${+v===i}">${i}</button>`;
     return `<div class="f"><span class="lab">${esc(lab)}${opt}</span><div class="score" role="group" aria-label="${esc(lab)}">${b}${f.lo?`<div class="ends"><span>1＝${esc(f.lo)}</span><span>${f.max}＝${esc(f.hi)}</span></div>`:''}</div></div>`}
   if(f.type==='chips'){const cur=v||[];return `<div class="f"><span class="lab">${esc(lab)}</span><div class="chips" role="group">${f.options.map(o=>`<button type="button" data-chip="${esc(o)}" data-k="${f.k}" data-p="${path}" data-max="${f.max||99}" aria-pressed="${cur.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`}
-  if(f.type==='img')return `<div class="f"><span class="lab">${esc(lab)}${f.opt?' <small>選填</small>':''}</span><div class="imgf">${v?`<img src="${v}" alt="">`:''}<div><input type="file" accept="image/*" id="${id}" data-img="${f.k}" data-p="${path}"> ${v?`<button type="button" class="btn small" data-rmimg="${f.k}" data-p="${path}">移除</button>`:''}</div></div></div>`;
+  if(f.type==='img')return `<div class="f"><span class="lab">${esc(lab)}${f.opt&&!/選填/.test(lab)?' <small>選填</small>':''}</span>${f.note?`<p class="note" style="margin:0 0 6px">${esc(f.note)}</p>`:''}<div class="imgf">${v?`<img src="${v}" alt="">`:''}<div><input type="file" accept="image/*" id="${id}" data-img="${f.k}" data-p="${path}"> ${v?`<button type="button" class="btn small" data-rmimg="${f.k}" data-p="${path}">移除</button>`:''}</div></div></div>`;
   return '';
 }
 function selOptions(f,v){
@@ -1070,6 +1072,11 @@ function impHTML(id){ const d=D[id];
    <div class="f"><span class="lab">② 把同一張照片和辨識指令交給 AI</span><div class="ailinks">${AILINKS.map(a=>`<a class="btn small" href="${a[1]}" target="_blank" rel="noopener" data-impai="${a[0]}" data-scope="one">${a[0]} ↗</a>`).join('')}<button type="button" class="btn small" data-copyimp="one">只複製辨識指令</button></div><p class="note">點平台名稱會先複製辨識指令，再開新分頁。在那邊上傳同一張照片、貼上指令送出。</p></div>
    <div class="f"><label for="impText">③ 把 AI 的辨識結果貼回這裡</label><textarea id="impText" placeholder="[[${id}.…]] 內容　每個欄位一行"></textarea><button type="button" class="btn small primary" data-doimp="one">代入這座島的欄位</button></div>
   </div></details>` }
+function sceneFrom(n){ const t=String(D.L3['q'+n]||''), g=re=>{const m=t.match(re);return m?m[1].trim().replace(/[。.\s]+$/,''):''};
+  return {place:g(/場景\s*[：:＝=]\s*([^｜|；;\n]+)/),doing:g(/正在做(?:什麼)?\s*[：:＝=]\s*([^｜|；;\n]+)/),who:g(/身邊(?:有誰|的人|有)?\s*[：:＝=]\s*([^｜|；;\n]+)/),mood:g(/氛圍(?:關鍵字)?\s*[：:＝=]\s*([^｜|；;\n]+)/)} }
+let SELFIE={src:null,blob:null};
+function prepSelfie(){ const src=D.L4.selfie; if(!src){SELFIE={src:null,blob:null};return} if(SELFIE.src===src)return; SELFIE={src,blob:null};
+  const im=new Image(); im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);const bin=atob(c.toDataURL('image/png').split(',')[1]),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);if(SELFIE.src===src)SELFIE.blob=new Blob([a],{type:'image/png'})}; im.src=src }
 function storeOf(path){ if(path==='main')return D[active]; return D[active].entries[+path] }
 function renderPanel(keepScroll){
   const isl=BY[active], d=D[active], q=QUADS[isl.quad], sc=keepScroll?$('pbody').scrollTop:0;
@@ -1091,7 +1098,7 @@ function renderPanel(keepScroll){
     h+=`</fieldset>`;
     if(isl.fields){const ea=editable(isl,'main'); h+=`<fieldset ${ea?'':'disabled'} style="margin-top:20px">${isl.fields.map(f=>fieldHTML(f,d,'main')).join('')}</fieldset>`}
   }
-  $('pbody').innerHTML=h; $('pbody').scrollTop=sc; drawChartPrev(); updProg();
+  $('pbody').innerHTML=h; $('pbody').scrollTop=sc; drawChartPrev(); updProg(); if(active==='L4')prepSelfie();
   const dt=$('pbody').querySelector('details.imp'); if(dt)dt.addEventListener('toggle',()=>{impOpen=dt.open});
   const order=ISLANDS.map(i=>i.id), ix=order.indexOf(active); $('btnPrev').disabled=ix===0; $('btnNext').disabled=ix===order.length-1;
 }
@@ -1108,6 +1115,9 @@ function closePanel(){ const id=active; active=null; document.body.classList.rem
 
 $('pbody').addEventListener('input',e=>{const t=e.target; if(!t.dataset.k||t.type==='file')return; storeOf(t.dataset.p)[t.dataset.k]=t.value; changed();
   if(t.tagName==='SELECT'&&['x','y','dim','prefer'].includes(t.dataset.k))renderPanel(true);
+  if(active==='L4'&&t.dataset.k==='option'&&t.value){ const sc=sceneFrom(t.value), prev=D.L4._auto||{}; let n=0;
+    ['place','doing','who','mood'].forEach(k=>{ if(sc[k]&&(!has(D.L4[k])||D.L4[k]===prev[k])){D.L4[k]=sc[k];n++} }); D.L4._auto=sc; changed(); renderPanel(true);
+    toast(n?'已依象限內容帶入 '+n+' 個欄位，可以自己再改':(Object.values(sc).some(Boolean)?'這幾格已有你自己寫的內容，沒有覆蓋':'這個象限還沒有「未來畫面」的描述。請自己填，或回分析島用指令草稿重問一次')) }
   if(t.dataset.k==='by'){const h=t.closest('.entry').querySelector('h4'); h.textContent=(t.value||'第 '+(+t.dataset.p+1)+' 位同學')+'的回饋'}});
 $('pbody').addEventListener('focusin',e=>{const t=e.target; if(t.tagName!=='SELECT')return;
   const f=(BY[active].fields||[]).concat(BY[active].efields||[]).find(x=>x.k===t.dataset.k); if(!f||typeof f.options!=='function')return;
@@ -1120,12 +1130,19 @@ $('pbody').addEventListener('paste',e=>{const t=e.target; if(active!=='L3'||!t.d
     if(r&&[1,2,3,4].filter(n=>r[n]).length>=3){[1,2,3,4,'a','c'].forEach(n=>{D.L3['q'+n]=r[n]||''});changed();renderPanel(true);const g=$('pbody').querySelector('.qg');if(g)g.scrollIntoView({block:'start'});toast('已把 AI 回覆拆進四象限')}
     else{changed();toast('已貼上，但找不到【象限1】到【象限4】的標題，無法自動拆。請用指令草稿重問一次，或手動填四格')}},0)});
 const copyPrompt=who=>{const p=buildPrompt(active); if(!has(p))return; D[active].ai_prompt=p; save();
-  navigator.clipboard.writeText(p).then(()=>toast(who?'指令已複製，到 '+who+' 貼上送出':'指令已複製'),()=>toast('無法自動複製。請按「用我填的內容組一份指令草稿」，再手動選取文字複製'))};
+  const okT=()=>toast(who?'指令已複製，到 '+who+' 貼上送出':'指令已複製'), bad=()=>toast('無法自動複製。請按「用我填的內容組一份指令草稿」，再手動選取文字複製');
+  if(active==='L4'&&has(D.L4.selfie)&&SELFIE.blob&&window.ClipboardItem){
+    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([p],{type:'text/plain'}),'image/png':SELFIE.blob})])
+      .then(()=>toast('指令和你的照片已一起複製'+(who?'，到 '+who+' 貼上':'')+'。貼上後如果只出現其中一樣，回來按「只複製照片」或「只複製指令」再貼一次'),()=>navigator.clipboard.writeText(p).then(okT,bad)); return }
+  navigator.clipboard.writeText(p).then(okT,bad)};
+const copyPhoto=()=>{ if(!SELFIE.blob||!window.ClipboardItem){toast('這個瀏覽器不能直接複製照片。請到 AI 平台用上傳的方式附上照片');return}
+  navigator.clipboard.write([new ClipboardItem({'image/png':SELFIE.blob})]).then(()=>toast('照片已複製，到 AI 平台的輸入框貼上'),()=>toast('無法複製照片。請到 AI 平台用上傳的方式附上照片')) };
 $('pbody').addEventListener('click',e=>{
   const a=e.target.closest('a[data-ai]');
   if(a){ if(a.closest('fieldset:disabled'))return; copyPrompt(a.dataset.ai); D[active].ai_platform=a.dataset.ai; const sel=$('pbody').querySelector('select[data-k="ai_platform"]'); if(sel)sel.value=a.dataset.ai; changed(); return }
   const t=e.target.closest('button'); if(!t||t.closest('fieldset:disabled'))return;
   if(t.hasAttribute('data-copyprompt')){copyPrompt('');return}
+  if(t.hasAttribute('data-copyphoto')){copyPhoto();return}
   if(t.hasAttribute('data-splitq')){ const r=parseQuads(D.L3.ai_reply); if(!r){toast('在 AI 回覆裡找不到【象限1】到【象限4】的標題。請用草稿指令重問一次，或手動把內容貼進四格');return}
     const put=()=>{[1,2,3,4,'a','c'].forEach(n=>{if(r[n])D.L3['q'+n]=r[n]});changed();renderPanel(true);toast('已拆進 '+[1,2,3,4].filter(n=>r[n]).length+' 個象限')}; [1,2,3,4].some(n=>has(D.L3['q'+n]))?confirmBox('覆蓋四象限','四象限已有內容，要用 AI 回覆重新拆一次嗎？',put):put(); return }
   if(t.dataset.from){ const d=D[active], src=d[t.dataset.from], ta=$('pbody').querySelector('textarea[data-k="'+t.dataset.to+'"]'); if(!has(src)){toast('還沒貼回 AI 的回覆');return}
