@@ -34,7 +34,7 @@ body.panel-open #stage{right:var(--panel-w)}
 body.panel-open.wide #stage{right:min(920px,100vw)}
 
 /* 島上的名牌與文字牌 */
-#labels{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#labels{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
 #labels>*{position:absolute;left:0;top:0;pointer-events:auto;will-change:transform}
 .plate{border:0;background:var(--c);color:#fff;border-radius:14px;padding:5px 16px 7px;text-align:center;box-shadow:0 4px 0 rgba(20,40,50,.22);white-space:nowrap;z-index:5000;line-height:1.25}
 .plate small{display:block;font-size:11px;letter-spacing:.12em;opacity:.92;font-weight:700}
@@ -96,8 +96,11 @@ body.panel-open #demoBar{display:none}
 /* 範例提示 */
 #demoBar{position:absolute;left:50%;transform:translateX(-50%);top:62px;z-index:4;background:#fff3c9;border:1px solid #e5c868;border-radius:12px;padding:6px 8px 6px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 3px 0 rgba(34,50,58,.1);max-width:calc(100% - 32px)}
 #demoBar[hidden]{display:none}
-#viewBar{position:absolute;left:50%;transform:translateX(-50%);top:62px;z-index:6;background:var(--ink);color:#fff;border-radius:12px;padding:7px 8px 7px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px;box-shadow:0 3px 0 rgba(0,0,0,.2);max-width:calc(100% - 32px)}
+#viewBar{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:62px;z-index:6;background:var(--ink);color:#fff;border-radius:12px;padding:7px 8px 7px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px;box-shadow:0 3px 0 rgba(0,0,0,.2);max-width:calc(100% - 32px)}
 #viewBar[hidden]{display:none}
+#viewBar button{flex:none;white-space:nowrap}
+body.panel-open #viewBar{right:calc(var(--panel-w) + 16px)}
+body.panel-open.wide #viewBar{right:calc(min(920px,100vw) + 16px)}
 #viewSaved{font-size:12px;opacity:.8;white-space:nowrap}
 body.viewing .seg,body.viewing #btnImp{display:none}
 .cp{margin:0 0 12px;font-size:14px;line-height:1.7}
@@ -224,9 +227,10 @@ body.panel-open #help{display:none}
   :root{--panel-w:100vw}
   body.panel-open #stage{right:0;bottom:64%}
   body.panel-open #top,body.panel-open.wide #top{right:0}
+  body.panel-open #viewBar,body.panel-open.wide #viewBar{right:16px}
   #panel{top:36%;border-left:0;border-top:1px solid var(--line);transform:translateY(102%);border-radius:18px 18px 0 0;overflow:hidden}
   body.wide #panel{top:0;border-radius:0}
-  #demoBar{top:104px}
+  #demoBar,#viewBar{top:104px}
   #help{display:none}
 }
 @media (prefers-reduced-motion:reduce){#stage,#panel{transition:none}}
@@ -1307,7 +1311,7 @@ async function pushCloud(){ if(!CLOUD||VIEW)return; clearTimeout(cloudT); lastPu
   const data=JSON.stringify(stripData()), ov=overall(), sigAll=data+JSON.stringify(ov.prog), name=D.L0.name||CLOUD.name||'未命名', school=D.L0.school||'', media=MEDIA.map(([i,k])=>[i+'_'+k,D[i][k]||'']);
   try{ const u=await ensureUser(), ref=stuRef(CLOUD.code,u.uid);
     if(sigAll!==lastPush){ await ref.set({name,school,pct:ov.pct,prog:ov.prog,data,t:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); lastPush=sigAll }
-    for(const [id,v] of media){ const sig=v.length+':'+v.slice(-24); if(mediaSig[id]===sig||v.length>900000)continue; await ref.collection('media').doc(id).set({v}); mediaSig[id]=sig; saveCloudCfg() }
+    for(const [id,v] of media){ const sig=v.length+':'+v.slice(-24); if(mediaSig[id]===sig||v.length>900000||(!v&&!mediaSig[id]))continue; await ref.collection('media').doc(id).set({v}); mediaSig[id]=sig; saveCloudCfg() }
   }catch(e){console.warn('cloud push',e)} }
 function mergeFeedback(target,docs){ RS.forEach(id=>{ const keep=(target[id].entries||[]).filter(e=>!e._fid);
   const cloud=docs.map(d=>Object.assign({},d[id]||{},{by:d.by||'',_fid:d._id})).filter(e=>BY[id].efields.some(f=>f.k!=='by'&&has(e[f.k])));
@@ -1340,7 +1344,7 @@ async function enterView(code,sid,kind){
     const [med,fb]=await Promise.all([ref.collection('media').get(),ref.collection('feedback').get()]);
     med.forEach(m=>{const p=m.id.split('_'); if(o[p[0]]&&m.data().v)o[p[0]][p[1]]=m.data().v});
     const docs=fb.docs.map(d=>Object.assign({_id:d.id},d.data()));
-    if(kind==='peer'){ const mine=docs.find(d=>d._id===u.uid)||{}, me=mine.by||((MYD||D).L0||{}).name||''; RS.forEach(id=>{o[id].entries=[Object.assign({},mine[id]||{},{by:me})]}) }
+    if(kind==='peer'){ const mine=docs.find(d=>d._id===u.uid)||{}, me=mine.by||(CLOUD&&CLOUD.name)||(META.demo?'':((MYD||D).L0||{}).name)||''; RS.forEach(id=>{o[id].entries=[Object.assign({},mine[id]||{},{by:me})]}) }
     else mergeFeedback(o,docs);
     quietClose(); if(!VIEW){MYD=D;MYMODE=META.mode} D=o; VIEW={code,sid,kind,name:snap.data().name||'同學'}; META.mode='peer';
     document.body.classList.add('viewing'); $('demoBar').hidden=true;
