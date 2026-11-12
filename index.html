@@ -96,6 +96,19 @@ body.panel-open #demoBar{display:none}
 /* 範例提示 */
 #demoBar{position:absolute;left:50%;transform:translateX(-50%);top:62px;z-index:4;background:#fff3c9;border:1px solid #e5c868;border-radius:12px;padding:6px 8px 6px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 3px 0 rgba(34,50,58,.1);max-width:calc(100% - 32px)}
 #demoBar[hidden]{display:none}
+#viewBar{position:absolute;left:50%;transform:translateX(-50%);top:62px;z-index:6;background:var(--ink);color:#fff;border-radius:12px;padding:7px 8px 7px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px;box-shadow:0 3px 0 rgba(0,0,0,.2);max-width:calc(100% - 32px)}
+#viewBar[hidden]{display:none}
+#viewSaved{font-size:12px;opacity:.8;white-space:nowrap}
+body.viewing .seg,body.viewing #btnImp{display:none}
+.cp{margin:0 0 12px;font-size:14px;line-height:1.7}
+.th{font-family:var(--display);font-size:17px;margin:18px 0 8px}
+.tcode{background:var(--ink);color:#fff;border-radius:12px;padding:10px 16px;font-size:15px;margin-bottom:12px}
+.tcode b{font-size:28px;letter-spacing:.18em;margin-left:10px;font-variant-numeric:tabular-nums}
+.trow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:6px;font-size:14px}
+.trow:hover{border-color:var(--active)}
+.trow b{min-width:84px}.trow span{flex:1;color:var(--muted)}.trow em{font-style:normal;font-size:12px;color:var(--muted)}
+.trow .dots{flex:none;display:flex;gap:3px}.trow .dots i{width:11px;height:11px;border-radius:3px;background:#e2dccb}.trow .dots i.h{background:#f0b545}.trow .dots i.d{background:var(--ok)}
+.sheet .f input[type=text]{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px}
 
 /* 群島索引 */
 #index{position:absolute;left:14px;top:66px;bottom:14px;width:232px;z-index:3;display:flex;flex-direction:column;gap:8px;pointer-events:none}
@@ -231,6 +244,7 @@ body.panel-open #help{display:none}
     <button type="button" id="modePeer" aria-pressed="false">我是回饋同學</button>
   </div>
   <button class="btn" id="btnOverview" type="button">全景</button>
+  <button class="btn" id="btnCloud" type="button">雲端課程</button>
   <button class="btn" id="btnImp" type="button">拍照代入</button>
   <button class="btn" id="btnChecks" type="button">邏輯羅盤 <span id="checkCount"></span></button>
   <button class="btn primary" id="btnExport" type="button">輸出成果</button>
@@ -270,6 +284,22 @@ body.panel-open #help{display:none}
       <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">下載鍵沒有反應時，可在下方海報上按右鍵或長按另存圖片。</p>
       <img id="posterImg" alt="成果海報預覽">
     </div>
+  </div>
+</div>
+
+<div id="viewBar" hidden><span id="viewText"></span><span id="viewSaved"></span><button class="btn small primary" id="viewExit" type="button">回到我的群島</button></div>
+
+<div class="modal" id="cloudModal" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="clTitle" style="max-width:600px">
+    <header><h2 id="clTitle">雲端課程</h2><button class="btn small" data-close type="button">關閉</button></header>
+    <div class="body" id="cloudBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="teachModal" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="tcTitle" style="max-width:760px">
+    <header><h2 id="tcTitle">講師控台</h2><button class="btn small" data-close type="button">關閉</button></header>
+    <div class="body" id="teachBody"></div>
   </div>
 </div>
 
@@ -571,7 +601,8 @@ function demo(){
   return d;
 }
 let saveWarned=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify({D,META}))}catch(e){ if(!saveWarned&&typeof toast==='function'){saveWarned=true;setTimeout(()=>toast('瀏覽器的儲存空間滿了，新的內容可能沒存到。請先到「輸出成果」匯出資料檔備份，或移除幾張照片'),50)} }}
+function save(){ if(VIEW){ if(VIEW.kind==='peer')queueFb(); return } saveLocal(); queueCloud() }
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify({D,META}))}catch(e){ if(!saveWarned&&typeof toast==='function'){saveWarned=true;setTimeout(()=>toast('瀏覽器的儲存空間滿了，新的內容可能沒存到。請先到「輸出成果」匯出資料檔備份，或移除幾張照片'),50)} }}
 function load(){
   try{const s=JSON.parse(localStorage.getItem(KEY)||'null');
     if(s&&s.D){D=Object.assign(blank(),s.D);ISLANDS.forEach(i=>{if(i.side==='peer'&&!Array.isArray(D[i.id].entries))D[i.id].entries=[]});META=Object.assign(META,s.META||{});return}
@@ -943,7 +974,7 @@ function renderIndex(){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]'); if(b){document.body.classList.remove('index-open'); $('checkModal').hidden=true; openIsland(b.dataset.go,b.dataset.tile!==undefined?+b.dataset.tile:undefined)} const c=e.target.closest('[data-close]'); if(c)c.closest('.modal').hidden=true});
 
-const editable=(isl,part)=> part==='entries' ? META.mode==='peer' : META.mode==='author';
+const editable=(isl,part)=> (VIEW&&VIEW.kind==='teacher') ? false : (part==='entries' ? META.mode==='peer' : META.mode==='author');
 function hintFor(id){
   const L3=D.L3; let h='';
   const box=(cls,t)=>`<div class="hint ${cls}">${t}</div>`;
@@ -1083,7 +1114,7 @@ function renderPanel(keepScroll){
   $('phead').style.setProperty('--qc',q.color);
   $('phead').innerHTML=`<div class="row"><span class="chip q" style="--qc:${q.color}">${q.name}｜${q.sub}</span>${isl.scene?`<span class="chip">${isl.scene}</span>`:''}</div><h2>${isl.no}　${isl.name}</h2><p><b style="color:var(--ink)">${esc(isl.ask)}</b><br>${esc(isl.intro)}</p>`;
   let h=hintFor(active);
-  if(isl.side==='peer'||META.mode==='author')h+=impHTML(active);
+  if(!VIEW&&(isl.side==='peer'||META.mode==='author'))h+=impHTML(active);
   if(isl.side==='self'){
     const ed=editable(isl,'main');
     if(!ed)h+=`<div class="ro">你現在是回饋同學，左邊的島只能閱讀。讀完後過橋到右邊四座島留言。</div>`;
@@ -1091,10 +1122,10 @@ function renderPanel(keepScroll){
     h+=`<fieldset ${ed?'':'disabled'}>${rows.join('')}</fieldset>`;
   }else{
     const ed=editable(isl,'entries');
-    if(!ed)h+=`<div class="ro">這座島由同學填寫。把裝置交給同學，或請他按右上角「我是回饋同學」。</div>`;
+    if(!ed)h+=VIEW?`<div class="ro">唯讀檢視。</div>`:`<div class="ro">這座島由同學填寫。把裝置交給同學，或請他按右上角「我是回饋同學」。</div>`;
     h+=`<fieldset ${ed?'':'disabled'}>`;
-    d.entries.forEach((e,i)=>{h+=`<div class="entry"><div class="row"><h4>${esc(e.by||'第 '+(i+1)+' 位同學')}的回饋</h4><button type="button" class="btn small" data-rmentry="${i}">刪除</button></div>${isl.efields.map(f=>fieldHTML(f,e,String(i))).join('')}</div>`});
-    h+=d.entries.length<4?`<button type="button" class="btn" data-addentry>＋ 新增一位同學的回饋</button>`:`<p style="color:var(--muted);font-size:13px">每座島最多四位同學。</p>`;
+    d.entries.forEach((e,i)=>{h+=`<div class="entry"><div class="row"><h4>${esc(e.by||'第 '+(i+1)+' 位同學')}的回饋</h4>${VIEW?'':`<button type="button" class="btn small" data-rmentry="${i}">刪除</button>`}</div>${isl.efields.map(f=>fieldHTML(f,e,String(i))).join('')}</div>`});
+    h+=VIEW?'':d.entries.length<4?`<button type="button" class="btn" data-addentry>＋ 新增一位同學的回饋</button>`:`<p style="color:var(--muted);font-size:13px">每座島最多四位同學。</p>`;
     h+=`</fieldset>`;
     if(isl.fields){const ea=editable(isl,'main'); h+=`<fieldset ${ea?'':'disabled'} style="margin-top:20px">${isl.fields.map(f=>fieldHTML(f,d,'main')).join('')}</fieldset>`}
   }
@@ -1250,6 +1281,118 @@ $('ex3d').onclick=async()=>{ if(!ok3d)return toast('這個瀏覽器沒有 3D 畫
 $('exJson').onclick=()=>saveFile(fname('json'),new Blob([JSON.stringify({app:'ai-islands',v:3,D},null,1)],{type:'application/json'}));
 $('imJsonBtn').onclick=()=>$('imJson').click();
 $('imJson').onchange=e=>{const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{const j=JSON.parse(rd.result); if(!j||j.app!=='ai-islands'||j.v!==3||!j.D)throw 0; confirmBox('匯入資料檔','匯入後會取代目前畫面上的內容，確定嗎？',()=>{D=Object.assign(blank(),j.D);ISLANDS.forEach(i=>{if(i.side==='peer'&&!Array.isArray(D[i.id].entries))D[i.id].entries=[]});META.demo=false;$('demoBar').hidden=true;save();drawAll();renderIndex();$('exportModal').hidden=true;toast('已匯入 '+(D.L0.name||'')+' 的群島')}) }catch(x){toast('這不是本工具這一版匯出的資料檔')} e.target.value='' }; rd.readAsText(f)};
+
+/* ============================ 雲端課程（Firebase 免費方案） ============================ */
+const FB_CFG={apiKey:"AIzaSyBUhHIXOjlEXXHIPWEn0iQoTfd0WssD1_I",authDomain:"ai-islands.firebaseapp.com",projectId:"ai-islands",storageBucket:"ai-islands.firebasestorage.app",messagingSenderId:"254391927445",appId:"1:254391927445:web:898f5353707076bf03119c"};
+const CK='ai-islands-cloud', PRE=Object.fromEntries(new URLSearchParams(location.search));
+let CLOUD=null, VIEW=null, MYD=null, MYMODE='author', fbReady=null, db=null, auth=null, unsubFb=null, unsubRoster=null, cloudT=null, fbT=null, mediaSig={}, lastPush='', lastPushAt=0;
+const TEACH={cls:null};
+try{const c=JSON.parse(localStorage.getItem(CK)||'null'); if(c&&c.code){CLOUD=c; mediaSig=c.sig||{}}}catch(e){}
+const saveCloudCfg=()=>{try{CLOUD?localStorage.setItem(CK,JSON.stringify(Object.assign({},CLOUD,{sig:mediaSig}))):localStorage.removeItem(CK)}catch(e){}};
+const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('load '+src));document.head.appendChild(s)});
+function fbInit(){ if(fbReady)return fbReady; if(!FB_CFG)return Promise.reject(new Error('nocfg'));
+  const base='https://www.gstatic.com/firebasejs/10.12.2/';
+  fbReady=loadScript(base+'firebase-app-compat.js').then(()=>loadScript(base+'firebase-auth-compat.js')).then(()=>loadScript(base+'firebase-firestore-compat.js')).then(()=>{
+    firebase.initializeApp(FB_CFG); db=firebase.firestore(); auth=firebase.auth();
+    return new Promise(r=>{const off=auth.onAuthStateChanged(u=>{off();r(u)})}) }).catch(e=>{fbReady=null;throw e});
+  return fbReady }
+async function ensureUser(){ await fbInit(); if(!auth.currentUser)await auth.signInAnonymously(); return auth.currentUser }
+const classRef=code=>db.collection('classes').doc(code), stuRef=(code,sid)=>classRef(code).collection('students').doc(sid);
+const MEDIA=[['L0','photo'],['L4','image'],['L5','cover']], RS=['R1','R2','R3','R4'];
+function stripData(){ const o=JSON.parse(JSON.stringify(D)); ISLANDS.forEach(i=>{const d=o[i.id]; delete d._photo; delete d.selfie; if(d.entries)d.entries=d.entries.filter(e=>!e._fid)}); MEDIA.forEach(([i,k])=>{delete o[i][k]}); return o }
+function overall(){ const ps=ISLANDS.map(i=>progress(i.id)); return {pct:Math.round(ps.reduce((a,p)=>a+p.pct,0)/ps.length),prog:Object.fromEntries(ISLANDS.map((i,x)=>[i.id,ps[x].pct]))} }
+function setCloudBtn(){ $('btnCloud').textContent=CLOUD?'課程 '+CLOUD.code:'雲端課程' }
+function queueCloud(){ if(!CLOUD||VIEW)return; clearTimeout(cloudT); cloudT=setTimeout(pushCloud,Math.max(8000,25000-(Date.now()-lastPushAt))) }
+async function pushCloud(){ if(!CLOUD||VIEW)return; clearTimeout(cloudT); lastPushAt=Date.now();
+  const data=JSON.stringify(stripData()), ov=overall(), sigAll=data+JSON.stringify(ov.prog), name=D.L0.name||CLOUD.name||'未命名', school=D.L0.school||'', media=MEDIA.map(([i,k])=>[i+'_'+k,D[i][k]||'']);
+  try{ const u=await ensureUser(), ref=stuRef(CLOUD.code,u.uid);
+    if(sigAll!==lastPush){ await ref.set({name,school,pct:ov.pct,prog:ov.prog,data,t:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); lastPush=sigAll }
+    for(const [id,v] of media){ const sig=v.length+':'+v.slice(-24); if(mediaSig[id]===sig||v.length>900000)continue; await ref.collection('media').doc(id).set({v}); mediaSig[id]=sig; saveCloudCfg() }
+  }catch(e){console.warn('cloud push',e)} }
+function mergeFeedback(target,docs){ RS.forEach(id=>{ const keep=(target[id].entries||[]).filter(e=>!e._fid);
+  const cloud=docs.map(d=>Object.assign({},d[id]||{},{by:d.by||'',_fid:d._id})).filter(e=>BY[id].efields.some(f=>f.k!=='by'&&has(e[f.k])));
+  target[id].entries=keep.concat(cloud) }) }
+function listenFeedback(){ if(unsubFb){unsubFb();unsubFb=null} if(!CLOUD||VIEW||!auth||!auth.currentUser)return; let first=true;
+  unsubFb=stuRef(CLOUD.code,auth.currentUser.uid).collection('feedback').onSnapshot(s=>{ if(VIEW)return;
+    mergeFeedback(D,s.docs.map(d=>Object.assign({_id:d.id},d.data()))); saveLocal(); RS.forEach(drawFace); renderIndex(); if(active&&BY[active].side==='peer')renderPanel(true);
+    if(!first&&s.docChanges().some(c=>c.type!=='removed'))toast('收到同學的回饋，右邊的島更新了'); first=false; queueCloud() },e=>console.warn('feedback',e)) }
+async function joinClass(code,name){ code=String(code||'').trim().toUpperCase(); name=String(name||'').trim();
+  if(!/^[A-Z0-9]{4,12}$/.test(code)){toast('請輸入老師給的課程代碼');return} if(!name){toast('請輸入你的姓名');return}
+  try{ await ensureUser(); const c=await classRef(code).get(); if(!c.exists){toast('找不到這個課程代碼，請再確認一次');return}
+    if(META.demo){D=blank();META.demo=false;$('demoBar').hidden=true}
+    if(!has(D.L0.name))D.L0.name=name; CLOUD={code,name,cname:c.data().name||''}; mediaSig={}; lastPush=''; saveCloudCfg(); saveLocal(); drawAll(); renderIndex();
+    await pushCloud(); listenFeedback(); setCloudBtn(); renderCloud(); toast('已加入課程 '+code+'，你寫的內容會自動同步')
+  }catch(e){console.warn(e);toast('加入失敗：雲端連不上，請確認網路後再試')} }
+function leaveClass(){ CLOUD=null; saveCloudCfg(); if(unsubFb){unsubFb();unsubFb=null} setCloudBtn(); renderCloud(); toast('已離開課程，內容只會留在這台裝置') }
+const shareLink=()=>location.origin+location.pathname+'?c='+CLOUD.code+'&s='+auth.currentUser.uid;
+function renderCloud(){ const b=$('cloudBody');
+  if(!FB_CFG){b.innerHTML='<p class="cp">雲端課程還沒有啟用。</p>';return}
+  if(!CLOUD){ b.innerHTML=`<p class="cp">輸入老師給的課程代碼。加入後，你寫的內容會自動存到雲端，老師和你邀請的同學才看得到。</p><div class="f"><label for="clCode">課程代碼</label><input type="text" id="clCode" autocomplete="off" style="text-transform:uppercase" value="${esc(PRE.c||'')}"></div><div class="f"><label for="clName">我的姓名</label><input type="text" id="clName" value="${esc(META.demo?'':(D.L0.name||''))}"></div><div class="acts"><button type="button" class="btn primary" id="clJoin">加入課程</button></div><p class="cp" style="margin-top:22px;border-top:1px solid var(--line);padding-top:12px"><button type="button" class="btn small" id="clTeach">我是講師，開啟講師控台</button></p>`; return }
+  const uid=auth&&auth.currentUser?auth.currentUser.uid:'';
+  b.innerHTML=`<p class="cp">已加入課程 <b>${esc(CLOUD.code)}</b>${CLOUD.cname?'（'+esc(CLOUD.cname)+'）':''}。你寫的內容會自動同步到雲端。</p><div class="f"><label for="clLink">請同學回饋：把這個連結傳給同學</label><input type="text" id="clLink" readonly value="${uid?esc(shareLink()):'連線中…'}"><p class="note">同學打開後只能閱讀你的七座島，並在右邊四座島留下回饋。他寫的內容會自動出現在你的島上。</p></div><div class="acts"><button type="button" class="btn primary" id="clCopy">複製連結</button><button type="button" class="btn" id="clSync">立刻同步</button><button type="button" class="btn" id="clLeave">離開課程</button></div><p class="cp" style="margin-top:22px;border-top:1px solid var(--line);padding-top:12px"><button type="button" class="btn small" id="clTeach">講師控台</button></p>`;
+  if(!uid)ensureUser().then(()=>{if(!$('cloudModal').hidden)renderCloud()}).catch(()=>{}) }
+/* 看別人的群島：同學回饋（可寫右邊四座島）或講師檢視（全部唯讀） */
+function quietClose(){ if(!active)return; active=null; document.body.classList.remove('panel-open','wide'); setActive3d(null) }
+async function enterView(code,sid,kind){
+  try{ const u=await ensureUser(); if(kind==='peer'&&u.uid===sid){toast('這是你自己的連結。把它傳給同學，同學才能幫你回饋');return}
+    const ref=stuRef(code,sid), snap=await ref.get(); if(!snap.exists){toast('找不到這位同學的群島，連結可能不完整');return}
+    const o=Object.assign(blank(),JSON.parse(snap.data().data||'{}')); ISLANDS.forEach(i=>{if(i.side==='peer'&&!Array.isArray(o[i.id].entries))o[i.id].entries=[]});
+    const [med,fb]=await Promise.all([ref.collection('media').get(),ref.collection('feedback').get()]);
+    med.forEach(m=>{const p=m.id.split('_'); if(o[p[0]]&&m.data().v)o[p[0]][p[1]]=m.data().v});
+    const docs=fb.docs.map(d=>Object.assign({_id:d.id},d.data()));
+    if(kind==='peer'){ const mine=docs.find(d=>d._id===u.uid)||{}, me=mine.by||((MYD||D).L0||{}).name||''; RS.forEach(id=>{o[id].entries=[Object.assign({},mine[id]||{},{by:me})]}) }
+    else mergeFeedback(o,docs);
+    quietClose(); if(!VIEW){MYD=D;MYMODE=META.mode} D=o; VIEW={code,sid,kind,name:snap.data().name||'同學'}; META.mode='peer';
+    document.body.classList.add('viewing'); $('demoBar').hidden=true;
+    $('viewText').innerHTML=kind==='peer'?'你正在看 <b>'+esc(VIEW.name)+'</b> 的群島。左邊七座島只能閱讀，請到右邊四座島留下回饋。':'講師檢視：<b>'+esc(VIEW.name)+'</b> 的群島（唯讀）';
+    $('viewSaved').textContent=''; $('viewExit').textContent=kind==='peer'?'回到我的群島':'回到講師控台'; $('viewBar').hidden=false;
+    drawAll(); renderIndex(); overview(600);
+  }catch(e){console.warn(e);toast('雲端連線失敗，請確認網路後再試一次')} }
+function exitView(){ if(!VIEW)return; const kind=VIEW.kind; if(kind==='peer'){clearTimeout(fbT);pushFb()}
+  quietClose(); D=MYD; MYD=null; VIEW=null; META.mode=MYMODE; document.body.classList.remove('viewing'); $('viewBar').hidden=true; $('demoBar').hidden=!META.demo;
+  drawAll(); renderIndex(); overview(600); if(kind==='teacher')openTeach() }
+function queueFb(){ $('viewSaved').textContent='儲存中…'; clearTimeout(fbT); fbT=setTimeout(pushFb,5000) }
+async function pushFb(){ if(!VIEW||VIEW.kind!=='peer')return; const v=VIEW, by=RS.map(id=>(D[id].entries[0]||{}).by).find(has)||'', doc={by};
+  RS.forEach(id=>{const e=Object.assign({},D[id].entries[0]||{}); delete e.by; delete e._fid; doc[id]=e});
+  try{ const u=await ensureUser(); doc.t=firebase.firestore.FieldValue.serverTimestamp(); await stuRef(v.code,v.sid).collection('feedback').doc(u.uid).set(doc);
+    if(VIEW===v)$('viewSaved').textContent='已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) }
+  catch(e){console.warn(e); if(VIEW===v)$('viewSaved').textContent='儲存失敗，請檢查網路'} }
+/* 講師控台 */
+async function openTeach(){ $('cloudModal').hidden=true; $('teachModal').hidden=false; const b=$('teachBody'); b.innerHTML='<p class="cp">連線中…</p>';
+  try{ await fbInit(); const u=auth.currentUser;
+    if(!u||u.isAnonymous||!u.email){ b.innerHTML='<p class="cp">講師控台要用講師的 Google 帳號登入，才看得到全班的資料。</p><div class="acts"><button type="button" class="btn primary" id="tLogin">用 Google 帳號登入</button></div>'; return }
+    if(TEACH.cls)return teachClass(TEACH.cls);
+    const s=await db.collection('classes').where('owner','==',u.email).get(), rows=s.docs.map(d=>Object.assign({code:d.id},d.data())).sort((a,c)=>(c.created||0)-(a.created||0));
+    b.innerHTML=`<p class="cp">已登入：${esc(u.email)}　<button type="button" class="btn small" id="tLogout">登出</button></p><div class="f"><label for="tName">建立新課程</label><input type="text" id="tName" placeholder="課程名稱，例如：中央大學 11/20 上午班"></div><div class="acts"><button type="button" class="btn primary" id="tCreate">建立並產生課程代碼</button></div><h3 class="th">我的課程</h3>`+(rows.length?rows.map(r=>`<button type="button" class="trow" data-tclass="${esc(r.code)}"><b>${esc(r.code)}</b><span>${esc(r.name||'')}</span><em>開啟</em></button>`).join(''):'<p class="cp">還沒有課程。</p>');
+  }catch(e){console.warn(e); b.innerHTML='<p class="cp">連線失敗，或這個帳號沒有講師權限。</p><div class="acts"><button type="button" class="btn" id="tLogin">重新登入</button></div>'} }
+async function teachLogin(){ try{ await fbInit(); await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); if(unsubFb){unsubFb();unsubFb=null} openTeach(); if(CLOUD){lastPush='';mediaSig={};pushCloud().then(listenFeedback)} }
+  catch(e){console.warn(e);toast('登入沒有完成，請再試一次')} }
+async function teachCreate(){ const name=$('tName').value.trim(); if(!name){toast('先輸入課程名稱');return} const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code=''; for(let i=0;i<6;i++)code+=A[Math.floor(Math.random()*A.length)];
+  try{ await classRef(code).set({name,owner:auth.currentUser.email,created:Date.now()}); teachClass(code) }catch(e){console.warn(e);toast('建立失敗：這個 Google 帳號沒有講師權限')} }
+function teachClass(code){ TEACH.cls=code; const b=$('teachBody'); if(unsubRoster){unsubRoster();unsubRoster=null}
+  b.innerHTML=`<p class="cp"><button type="button" class="btn small" id="tBack">← 我的課程</button></p><div class="tcode">課程代碼 <b>${esc(code)}</b></div><p class="cp">請學生打開網站，按上方「雲端課程」，輸入代碼和姓名。也可以直接傳這個連結給學生：</p><div class="f"><input type="text" readonly id="tJoin" value="${esc(location.origin+location.pathname+'?c='+code)}"></div><div id="tRoster"><p class="cp">讀取中…</p></div>`;
+  unsubRoster=classRef(code).collection('students').onSnapshot(s=>{ const el=$('tRoster'); if(!el)return; const rows=s.docs.map(d=>Object.assign({sid:d.id},d.data())).sort((a,c)=>String(a.name).localeCompare(String(c.name),'zh-Hant'));
+    el.innerHTML=`<h3 class="th">學生 ${rows.length} 人（即時更新，點名字看完整內容）</h3>`+(rows.length?rows.map(r=>{const p=r.prog||{};return `<button type="button" class="trow" data-tstu="${esc(r.sid)}"><b>${esc(r.name||'未命名')}</b><span class="dots">${ISLANDS.map(i=>`<i class="${p[i.id]===100?'d':(p[i.id]>0?'h':'')}" title="${i.name}"></i>`).join('')}</span><span>${r.pct||0}%</span><em>${r.t&&r.t.toDate?r.t.toDate().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}):''}</em></button>`}).join(''):'<p class="cp">還沒有學生加入。</p>')
+  },e=>{console.warn(e);const el=$('tRoster');if(el)el.innerHTML='<p class="cp">沒有權限讀取這個課程的學生名單。</p>'}) }
+$('btnCloud').onclick=()=>{ if(VIEW){toast('先按上方的「'+$('viewExit').textContent+'」');return} $('cloudModal').hidden=false; renderCloud() };
+$('viewExit').onclick=exitView;
+document.addEventListener('click',e=>{ const t=e.target.closest('button'); if(!t)return; const id=t.id;
+  if(id==='clJoin')joinClass($('clCode').value,$('clName').value);
+  else if(id==='clCopy')navigator.clipboard.writeText($('clLink').value).then(()=>toast('連結已複製，傳給同學就可以了'),()=>toast('無法自動複製，請長按連結手動複製'));
+  else if(id==='clSync'){lastPush='';pushCloud().then(()=>toast('已同步到雲端'))}
+  else if(id==='clLeave')confirmBox('離開課程','離開後，新的內容不會再同步到雲端，老師和同學看不到後續的修改。確定嗎？',leaveClass);
+  else if(id==='clTeach')openTeach();
+  else if(id==='tLogin')teachLogin();
+  else if(id==='tLogout')auth.signOut().then(()=>{TEACH.cls=null;openTeach()});
+  else if(id==='tCreate')teachCreate();
+  else if(id==='tBack'){TEACH.cls=null;if(unsubRoster){unsubRoster();unsubRoster=null}openTeach()}
+  else if(t.dataset.tclass)teachClass(t.dataset.tclass);
+  else if(t.dataset.tstu){$('teachModal').hidden=true;if(unsubRoster){unsubRoster();unsubRoster=null}enterView(TEACH.cls,t.dataset.tstu,'teacher')}
+  else if(t.hasAttribute('data-close')&&t.closest('#teachModal')&&unsubRoster){unsubRoster();unsubRoster=null} });
+setCloudBtn();
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState!=='hidden')return; if(VIEW&&VIEW.kind==='peer'){clearTimeout(fbT);pushFb()} else if(CLOUD&&cloudT){pushCloud()} });
+if(FB_CFG){ if(PRE.c&&PRE.s)enterView(String(PRE.c).toUpperCase(),PRE.s,'peer'); else if(PRE.c&&!CLOUD){$('cloudModal').hidden=false;renderCloud()}
+  if(CLOUD)ensureUser().then(()=>{pushCloud();listenFeedback()}).catch(e=>console.warn(e)) }
 
 /* ============================ 啟動 ============================ */
 $('demoBar').hidden=!META.demo; setMode(META.mode); renderIndex();
