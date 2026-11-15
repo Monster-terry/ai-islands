@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3fb6b8">
+<title>課程資訊島｜陳志欣老師的課程群島</title>
+<meta name="description" content="陳志欣老師的 3D 課程群島：溝通表達、AI 生涯探索、聖誕行銷，每一座島就是一門課。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232f8496'/%3E%3Cpath d='M14 40c6-10 12-14 18-14s12 4 18 14z' fill='%239bd07a'/%3E%3Cpath d='M10 44h44' stroke='%23fffaf0' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* 世界：沿用三座課程群島的日間海景。海面為舞台，紙卡為介面，桃紅只給焦點與主要動作 */
+:root{
+  color-scheme: light;
+  --sea:#3fb6b8; --sea-deep:#2f8496; --sea-ink:#174f5a;
+  --paper:#fffaf0; --paper-2:#f6efdf; --line:#e2d7bf;
+  --ink:#22323a; --muted:#5d6f77;
+  --active:#ee3f78; --active-deep:#c92a5e;
+  --c-speech:#e9a93a; --c-speech-deep:#9a6410;
+  --c-ai:#8a6fdc; --c-ai-deep:#5b45ae;
+  --c-xmas:#2c9a68; --c-xmas-deep:#1d6e4a;
+  --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --shadow:0 14px 36px rgba(22,68,73,.18);
+  --shadow-s:0 4px 10px rgba(20,40,50,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--sea);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;overflow:hidden;-webkit-font-smoothing:antialiased;caret-color:var(--active)}
+::selection{background:rgba(238,63,120,.24);color:var(--ink)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px solid var(--active);outline-offset:2px;border-radius:10px}
+*{scrollbar-width:thin;scrollbar-color:#d6c9ab transparent}
+*::-webkit-scrollbar{width:8px;height:8px}*::-webkit-scrollbar-thumb{background:#d6c9ab;border-radius:8px}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+#stage{position:fixed;inset:0;overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+#labels>*{position:absolute;left:0;top:0;pointer-events:auto;will-change:transform}
+
+/* 島名牌：與課程群島同一套名牌語言 */
+.plate{border:0;background:var(--c);color:#fff;border-radius:16px;padding:8px 18px 10px;text-align:center;box-shadow:0 6px 14px rgba(20,40,50,.26);white-space:nowrap;line-height:1.25;transition:transform .35s var(--ease),box-shadow .35s var(--ease),opacity .35s;z-index:4000}
+.plate .sub{display:block;font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.95}
+.plate b{display:block;font-family:var(--display);font-size:26px;letter-spacing:.06em;margin:1px 0 2px}
+.plate .meta{display:inline-block;font-size:12px;font-weight:700;background:rgba(255,255,255,.26);border-radius:999px;padding:1px 10px;font-variant-numeric:tabular-nums}
+.plate:hover{box-shadow:0 10px 22px rgba(20,40,50,.32)}
+.plate.on{outline:3px solid #fff;outline-offset:3px}
+.plate[data-lod="0"]{padding:4px 12px 6px;border-radius:12px}
+.plate[data-lod="0"] .sub,.plate[data-lod="0"] .meta{display:none}
+.plate[data-lod="0"] b{font-size:18px}
+.plate.dark{color:var(--ink)}
+.plate.dark .meta{background:rgba(34,50,58,.12)}
+.stop{border:0;background:rgba(255,250,240,.96);color:var(--ink);border-radius:999px;padding:2px 10px 3px;font-size:12px;font-weight:700;box-shadow:0 3px 8px rgba(20,40,50,.18);white-space:nowrap;display:none;align-items:center;gap:6px}
+.stop i{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
+.stop[data-show="1"]{display:inline-flex}
+
+/* 頂部 */
+.top{position:fixed;left:20px;top:18px;right:20px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;z-index:20;pointer-events:none;transition:left .4s var(--ease)}
+.top>*{pointer-events:auto}
+.brand{background:var(--paper);border-radius:18px;padding:12px 20px 13px;box-shadow:var(--shadow);max-width:min(520px,60vw)}
+.brand h1{font-family:var(--display);font-size:28px;line-height:1.2;margin:0;letter-spacing:.04em;text-wrap:balance}
+.brand p{margin:3px 0 0;color:var(--muted);font-size:13.5px}
+.tools{display:flex;gap:8px}
+.tool{width:44px;height:44px;border-radius:14px;border:0;background:var(--paper);box-shadow:var(--shadow-s);display:grid;place-items:center;color:var(--ink);transition:background .2s,transform .2s var(--ease)}
+.tool:hover{background:#fff;transform:translateY(-1px)}
+.tool:active{transform:translateY(1px)}
+
+/* 底部航線 */
+.dock{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:8px;padding:8px;background:var(--paper);border-radius:20px;box-shadow:var(--shadow);z-index:20;max-width:calc(100vw - 32px);overflow-x:auto;transition:opacity .3s,transform .4s var(--ease)}
+.dock:empty{display:none}
+.dock button{border:0;background:transparent;border-radius:14px;padding:8px 14px 8px 10px;display:flex;align-items:center;gap:10px;text-align:left;white-space:nowrap;transition:background .2s}
+.dock button:hover{background:var(--paper-2)}
+.dock button.on{background:var(--paper-2);box-shadow:inset 0 0 0 2px var(--c)}
+.dock .dot{width:30px;height:30px;border-radius:10px;background:var(--c);display:grid;place-items:center;color:#fff}
+.dock .dot svg{width:17px;height:17px}
+.dock b{display:block;font-family:var(--display);font-size:17px;line-height:1.2}
+.dock small{display:block;font-size:12px;color:var(--muted)}
+.hint{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);background:rgba(23,79,90,.86);color:#fff;font-size:13px;padding:6px 14px;border-radius:999px;z-index:15;pointer-events:none;transition:opacity .8s;white-space:nowrap}
+.hint.gone{opacity:0}
+
+/* 課程抽屜 */
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:var(--paper);box-shadow:-16px 0 40px rgba(22,68,73,.22);z-index:30;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .45s var(--ease)}
+#panel.open{transform:none}
+.p-head{background:var(--c);color:#fff;padding:26px 28px 24px;position:relative;flex:none}
+.p-head.dark{color:var(--ink)}
+.p-head h2{font-family:var(--display);font-size:34px;line-height:1.15;margin:0 48px 8px 0;letter-spacing:.04em;text-wrap:balance}
+.p-head .tag{font-size:15px;font-weight:500;margin:0;opacity:.95}
+.p-head .close{position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.22);color:inherit;display:grid;place-items:center}
+.p-head .close:hover{background:rgba(255,255,255,.36)}
+.p-head.dark .close{background:rgba(34,50,58,.1)}
+.p-body{padding:22px 28px 8px;overflow-y:auto;flex:1}
+.p-body .full{font-family:var(--display);font-size:18px;line-height:1.45;margin:0 0 10px}
+.p-body .desc{margin:0 0 18px;max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 22px;padding:12px 16px;background:var(--paper-2);border-radius:14px}
+.facts span{font-size:13.5px;color:var(--muted)}
+.facts strong{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;margin-right:4px}
+.p-body h3{font-size:14px;margin:0 0 10px;color:var(--ink)}
+.route{list-style:none;margin:0 0 20px;padding:0;position:relative}
+.route li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;padding:7px 0;position:relative}
+.route li::before{content:"";position:absolute;left:16px;top:30px;bottom:-8px;width:2px;background:var(--line)}
+.route li:last-child::before{display:none}
+.route .n{width:34px;height:26px;border-radius:9px;background:var(--paper-2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-deep);position:relative;z-index:1}
+.route b{display:block;font-weight:700;line-height:1.35}
+.route small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
+.p-foot{padding:16px 28px 22px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;flex:none;background:var(--paper)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:14px;padding:13px 20px;font-weight:700;text-decoration:none;transition:background .2s,transform .2s var(--ease),box-shadow .2s}
+.btn.primary{background:var(--active);color:#fff;font-family:var(--display);font-size:20px;letter-spacing:.08em;box-shadow:0 8px 18px rgba(238,63,120,.32)}
+.btn.primary:hover{background:var(--active-deep);transform:translateY(-1px)}
+.btn.primary:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink);padding:9px 14px;font-size:14px}
+.btn.ghost:hover{background:var(--paper-2)}
+.btn.soft{background:var(--paper-2);color:var(--ink);font-size:14px;padding:11px 16px}
+.btn.soft:hover{background:#efe5cf}
+.btn:disabled{opacity:.45;transform:none;box-shadow:none}
+.url{font-size:12px;color:var(--muted);word-break:break-all;margin:0;text-align:center}
+
+/* 空狀態 */
+#empty{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--paper);border-radius:22px;padding:30px 34px 26px;box-shadow:var(--shadow);text-align:center;z-index:12;width:min(420px,calc(100vw - 40px));display:none}
+#empty.show{display:block;animation:rise .7s var(--ease)}
+#empty svg.big{width:46px;height:46px;stroke:var(--sea-deep);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#empty h2{font-family:var(--display);font-size:26px;margin:8px 0 6px}
+#empty p{margin:0 0 16px;color:var(--muted)}
+@keyframes rise{from{opacity:0;transform:translate(-50%,-44%)}to{opacity:1;transform:translate(-50%,-50%)}}
+
+#teacher{position:fixed;right:20px;bottom:22px;z-index:20;border:0;background:var(--paper);color:var(--ink);border-radius:14px;padding:9px 14px;font-size:13.5px;font-weight:700;display:flex;gap:8px;align-items:center;box-shadow:var(--shadow-s)}
+#teacher:hover{background:#fff}
+#teacher[hidden]{display:none}
+
+/* 講師控台 */
+#console{position:fixed;left:0;top:0;bottom:0;width:min(400px,100vw);background:var(--paper);z-index:35;box-shadow:16px 0 40px rgba(22,68,73,.22);display:flex;flex-direction:column;transform:translateX(-105%);transition:transform .45s var(--ease)}
+#console.open{transform:none}
+body.console .top{left:420px}
+.c-head{padding:22px 24px 14px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line)}
+.c-head h2{font-family:var(--display);font-size:26px;margin:0;line-height:1.2}
+.c-head p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:0;background:var(--paper-2);display:grid;place-items:center;flex:none}
+.icon-btn:hover{background:#efe5cf}
+.c-body{padding:16px 24px 20px;overflow-y:auto;flex:1}
+.c-label{display:block;font-size:13px;font-weight:700;margin:0 0 8px}
+.course-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--paper-2);margin-bottom:8px;transition:box-shadow .2s,background .2s}
+.course-row.on{background:#fff;box-shadow:inset 0 0 0 2px var(--c)}
+.course-row .dot{width:34px;height:34px;border-radius:11px;background:var(--c);display:grid;place-items:center;color:#fff}
+.course-row b{display:block;font-family:var(--display);font-size:18px;line-height:1.25}
+.course-row small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4}
+.switch{width:54px;height:30px;border-radius:999px;border:0;background:#cdbf9f;position:relative;transition:background .25s;padding:0}
+.switch::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .3s var(--ease)}
+.switch[aria-checked="true"]{background:var(--c)}
+.switch[aria-checked="true"]::after{transform:translateX(24px)}
+.sw-state{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;margin-top:2px}
+.field{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:15px}
+.field:focus{outline:3px solid rgba(238,63,120,.35);border-color:var(--active)}
+.sec{margin-top:20px}
+.qr-box{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:center;background:var(--paper-2);border-radius:16px;padding:14px}
+.qr-box .qr{width:132px;height:132px;background:#fff;border-radius:10px;padding:8px;display:grid;place-items:center}
+.qr-box .qr svg{width:100%;height:100%}
+.qr-box .acts{display:flex;flex-direction:column;gap:8px}
+.linkfield{font-size:12.5px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;word-break:break-all;margin:8px 0 0;user-select:all;font-variant-numeric:tabular-nums}
+.c-empty{padding:14px;border-radius:14px;background:var(--paper-2);color:var(--muted);font-size:14px;text-align:center}
+.c-note{font-size:12.5px;color:var(--muted);margin:16px 0 0;line-height:1.55}
+.c-foot{padding:14px 24px 20px;border-top:1px solid var(--line)}
+.c-foot .btn{width:100%}
+
+/* 投影 QR */
+#qrView{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;align-items:center;justify-content:center;gap:6vw;padding:5vh 6vw}
+#qrView.open{display:flex;animation:fade .4s var(--ease)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+#qrView .big-qr{width:min(70vh,46vw);height:min(70vh,46vw);background:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow)}
+#qrView .big-qr svg{width:100%;height:100%}
+#qrView .txt{max-width:36vw}
+#qrView h2{font-family:var(--display);font-size:clamp(32px,4.4vw,64px);line-height:1.15;margin:0 0 18px;text-wrap:balance}
+#qrView p{font-size:clamp(16px,1.6vw,22px);color:var(--muted);margin:0 0 20px}
+#qrView .chips{display:flex;flex-wrap:wrap;gap:10px}
+#qrView .chip{background:var(--c);color:#fff;font-family:var(--display);font-size:clamp(18px,1.8vw,26px);padding:6px 18px 8px;border-radius:14px}
+#qrView .chip.dark{color:var(--ink)}
+#qrView .x{position:absolute;right:24px;top:22px}
+
+#toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:var(--ink);color:#fff;padding:9px 18px;border-radius:12px;z-index:80;font-size:14px;transition:transform .4s var(--ease);pointer-events:none}
+#toast.show{transform:translate(-50%,0)}
+
+#fallback{position:fixed;inset:120px 20px 120px;display:none;flex-wrap:wrap;gap:16px;align-content:center;justify-content:center;z-index:5}
+#fallback.show{display:flex}
+#fallback button{border:0;background:var(--c);color:#fff;border-radius:22px;padding:28px 30px;min-width:220px;text-align:left;box-shadow:var(--shadow)}
+#fallback button b{font-family:var(--display);font-size:28px;display:block}
+
+@media (max-width:760px){
+  .brand h1{font-size:21px}.brand{padding:10px 14px;max-width:calc(100vw - 120px)}
+  .tool{width:40px;height:40px}
+  body.console .top{left:20px}
+  #panel{top:auto;height:min(78vh,640px);width:100vw;border-radius:22px 22px 0 0;transform:translateY(105%)}
+  #panel.open{transform:none}
+  .p-head{border-radius:22px 22px 0 0;padding:20px 22px 18px}
+  .p-head h2{font-size:27px}
+  .p-body,.p-foot{padding-left:22px;padding-right:22px}
+  .dock{bottom:14px;justify-content:flex-start}
+  .hint{bottom:94px}
+  #teacher{bottom:84px;right:14px}
+  #qrView{flex-direction:column;gap:20px}
+  #qrView .big-qr{width:min(76vw,52vh);height:min(76vw,52vh)}
+  #qrView .txt{max-width:none;text-align:center}
+  #qrView .chips{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="stage" aria-label="課程群島 3D 海圖"></div>
+
+<header class="top">
+  <div class="brand">
+    <h1 id="sceneTitle">課程資訊島</h1>
+    <p id="sceneSub">陳志欣老師的課程群島</p>
+  </div>
+  <div class="tools">
+    <button class="tool" id="btnHome" type="button" aria-label="回到全景" title="回到全景"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg></button>
+    <button class="tool" id="btnFull" type="button" aria-label="全螢幕" title="全螢幕"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+</header>
+
+<nav class="dock" id="dock" aria-label="開放中的課程島"></nav>
+<div class="hint" id="hint">拖曳旋轉・滾輪縮放・點島看課程</div>
+
+<div id="empty" role="status">
+  <svg class="big" viewBox="0 0 48 48"><path d="M24 6v30"/><path d="M24 6c7 4 11 10 12 18H24"/><path d="M8 36c3 3 6 4 8 4s5-1 8-4c3 3 6 4 8 4s5-1 8-4"/></svg>
+  <h2>目前沒有開放的航線</h2>
+  <p>請使用講師提供的課程連結或 QR Code 進入。</p>
+</div>
+
+<button id="teacher" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>講師控台</button>
+
+<aside id="panel" aria-labelledby="pTitle" aria-hidden="true">
+  <div class="p-head" id="pHead">
+    <h2 id="pTitle"></h2>
+    <p class="tag" id="pTag"></p>
+    <button class="close" id="pClose" type="button" aria-label="關閉課程資訊"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="p-body" id="pBody"></div>
+  <div class="p-foot">
+    <a class="btn primary" id="pGo" target="_blank" rel="noopener">登島開始<svg class="i" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+    <button class="btn ghost" id="pCopy" type="button"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>複製課程網址</span></button>
+  </div>
+</aside>
+
+<aside id="console" aria-labelledby="cTitle" aria-hidden="true">
+  <div class="c-head">
+    <div><h2 id="cTitle">講師控台</h2><p>勾選這一場要開放的島</p></div>
+    <button class="icon-btn" id="cClose" type="button" aria-label="關閉講師控台"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="c-body">
+    <div id="cRows"></div>
+    <div class="sec">
+      <label class="c-label" for="cSession">本場次名稱（選填）</label>
+      <input class="field" id="cSession" maxlength="40" placeholder="例：11/20 北分署 職涯講座" autocomplete="off">
+    </div>
+    <div class="sec">
+      <span class="c-label">學員連結</span>
+      <div id="cShare"></div>
+    </div>
+    <p class="c-note">開放狀態寫在連結裡，學員只會看到你開放的島，其他課程完全不會出現。</p>
+  </div>
+  <div class="c-foot"><button class="btn soft" id="cPreview" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>以學員視角預覽</button></div>
+</aside>
+
+<div id="qrView" role="dialog" aria-modal="true" aria-labelledby="qvTitle">
+  <button class="icon-btn x" id="qvClose" type="button" aria-label="關閉投影"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div class="big-qr" id="qvCode"></div>
+  <div class="txt">
+    <h2 id="qvTitle"></h2>
+    <p>用手機相機掃描，登上今天的課程島</p>
+    <div class="chips" id="qvChips"></div>
+  </div>
+</div>
+
+<div id="fallback"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+/* ============================ 課程資料 ============================ */
+const ICON={
+  speech:'<svg class="i" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  ai:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>',
+  xmas:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3 7 10h3l-4 6h12l-4-6h3z"/><path d="M12 16v4"/></svg>'
+};
+const COURSES=[
+ {id:'speech',name:'溝通表達群島',full:'說得清楚，讓聲音留下來｜三日溝通表達島嶼',tag:'真實故事 → 清楚訊息 → 聲音發表',
+  desc:'三日實作課程。從一次真實經驗開始，整理成有依據的訊息，最後用自己的聲音完成發表。每座練習島都會自動存在學員自己的裝置裡。',
+  facts:[['3','天'],['12','座練習島'],['','投影片・作品展・同學回饋']],
+  route:[['起航港','寫下稱呼，和這三次最想改善的表達問題'],['第一天｜故事表達與溝通溫度','從一段真實經驗，找到能被聽見的核心'],['第二天｜清楚表達與內容邏輯','把想法排成聽眾跟得上的路徑'],['第三天｜聲音表達與個人發表','讓內容透過自己的聲音留下來'],['作品展','匯出成果，彼此回饋']],
+  stops:['起航港','故事','邏輯','聲音','作品展','回饋','練習'],
+  url:'https://speech-islands-classroom.debonair-guan.workers.dev/',c:'#e9a93a',deep:'#9a6410',dark:true,pos:[-25,5]},
+ {id:'ai',name:'AI 生涯探索群島',full:'AI 生涯探索群島',tag:'平台模型 × 指令工程 × 參考資料',
+  desc:'用 AI 探索自己的生涯。學員在島上書寫，紙本學習單可以拍照交給 AI 一次代入，再用邏輯羅盤對照各島答案，最後輸出成果海報；也能切換成回饋同學的身分。',
+  facts:[['11','座島'],['','拍照代入・邏輯羅盤'],['','海報 PNG／PDF']],
+  route:[['出發港','我是誰、平常怎麼用 AI'],['現況島・查詢島・分析島','文字優化、資訊查詢、資料分析'],['圖像島・影像島','用 AI 生成未來畫面與短片'],['燈塔島','寫下宣言與三個行動'],['鏡子島・協作島・迷霧島・探險島','同學回饋與共同探索']],
+  stops:['出發港','現況','查詢','分析','圖像','影像','燈塔'],
+  url:'https://monster-terry.github.io/ai-islands/',c:'#8a6fdc',deep:'#5b45ae',pos:[0,-9]},
+ {id:'xmas',name:'聖誕行銷群島',full:'聖誕行銷群島｜商研院 AI 實戰',tag:'先找到靈感，再做出自己的故事',
+  desc:'商研院第四堂・餐飲社群行銷實戰。一場從靈感、影像到發表的 3D 聖誕行銷航行，Agent × Skills 六小時實作。左側七島完成作品，右側兩島交換顧客視角。',
+  facts:[['6','小時'],['7','座創作島'],['2','座受眾島']],
+  route:[['美叔港口','出發前準備工具'],['搜尋島・反向工程島','找聖誕案例，拆解它為什麼有效'],['企劃故事島・資源生成島','寫企劃，生成人物、場景與海報'],['影音製作島・社群推播島','做出三種風格影片，排程發文'],['成果發表島','發表自己的聖誕行銷作品'],['受眾體驗島・行動回饋島','換成顧客視角，給別組回饋']],
+  stops:['美叔港口','搜尋','反向工程','企劃故事','資源生成','影音製作','社群推播'],
+  url:'https://christmas-marketing-islands.consultant078383.chatgpt.site/',c:'#2c9a68',deep:'#1d6e4a',pos:[25,5]}
+];
+const BY=Object.fromEntries(COURSES.map(c=>[c.id,c]));
+
+/* ============================ 狀態：全部寫在網址 ============================ */
+function readState(){
+  const q=new URLSearchParams(location.search), h=new URLSearchParams(location.hash.replace(/^#/,''));
+  const get=k=>h.has(k)?h.get(k):q.get(k);
+  const open=(get('open')||'').split(',').map(s=>s.trim()).filter(id=>BY[id]);
+  return {open:[...new Set(open)],title:(get('t')||get('title')||'').slice(0,40),console:q.has('console')||h.has('console')};
+}
+const S=readState();
+let OPEN=new Set(S.open), TITLE=S.title, active=null, hover=null, consoleOn=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),2400)}
+function studentLink(ids,title){
+  const base=(/^https?:/.test(location.protocol)?location.origin+location.pathname:'');
+  const p=new URLSearchParams(); p.set('open',ids.join(',')); if(title)p.set('t',title);
+  return base+'?'+p.toString().replace(/%2C/g,',');
+}
+async function copyText(text,btn){
+  let ok=false; try{await navigator.clipboard.writeText(text);ok=true}catch(e){
+    try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e2){}}
+  if(btn){const sp=btn.querySelector('span')||btn, old=sp.textContent; sp.textContent=ok?'已複製':'請手動複製'; setTimeout(()=>sp.textContent=old,1800)}
+  if(!ok)toast('請手動複製網址');
+  return ok;
+}
+
+/* ============================ 3D 海圖 ============================ */
+const stage=$('stage');
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const TR=2.3, TY=1.3;
+const RING=[[0,0],[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+let renderer,scene,camera,controls,ok3d=true,labels,tween=null;
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(), NODES={}, BOATS=[], CLOUDS=[], RIPPLES=[], SPARKS=[];
+try{renderer=new THREE.WebGLRenderer({antialias:true});if(!renderer.getContext())throw 0}catch(e){ok3d=false}
+
+if(ok3d){
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+  labels=document.createElement('div');labels.id='labels';stage.appendChild(labels);
+  scene=new THREE.Scene();scene.background=new THREE.Color('#3fb6b8');scene.fog=new THREE.Fog('#3fb6b8',170,420);
+  camera=new THREE.PerspectiveCamera(30,1,1,900);
+  scene.add(new THREE.HemisphereLight('#ffffff','#5f9aa0',0.5));
+  const sun=new THREE.DirectionalLight('#fff1d6',0.78);sun.position.set(-45,70,40);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0006;sun.shadow.radius=3;
+  Object.assign(sun.shadow.camera,{left:-50,right:50,top:40,bottom:-40,near:10,far:200});scene.add(sun);
+
+  const MC={}, mat=(c,o)=>{const k=c+(o?JSON.stringify(o):'');return MC[k]||(MC[k]=new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.92},o)))};
+  const add=(g,geo,m,x,y,z,o)=>{const s=new THREE.Mesh(geo,typeof m==='string'?mat(m):m);s.position.set(x,y,z);s.castShadow=true;s.receiveShadow=true;
+    if(o){if(o.ry)s.rotation.y=o.ry;if(o.rx)s.rotation.x=o.rx;if(o.rz)s.rotation.z=o.rz;if(o.s)s.scale.set(o.s[0],o.s[1],o.s[2]);if(o.noShadow)s.castShadow=false}g.add(s);return s};
+  const G={box:(w,h,d)=>new THREE.BoxGeometry(w,h,d),cyl:(a,b,h,n)=>new THREE.CylinderGeometry(a,b,h,n||14),cone:(r,h,n)=>new THREE.ConeGeometry(r,h,n||14),sph:r=>new THREE.SphereGeometry(r,16,12)};
+  const flat=c=>mat(c,{flatShading:true}), cream='#fff4e2', wood='#b98556', glass='#a8dcea', glow=(c,e)=>new THREE.MeshStandardMaterial({color:c,emissive:e||c,emissiveIntensity:.9});
+
+  // 海面：大平面 + 會漂動的浪花
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:'#44bcc0',roughness:.55}));
+  sea.rotation.x=-Math.PI/2;sea.position.y=-.75;sea.receiveShadow=true;scene.add(sea);
+  let sd=11;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647};
+  const crestM=new THREE.MeshBasicMaterial({color:'#e9fbf6',transparent:true,opacity:.55,depthWrite:false});
+  for(let i=0;i<70;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.4+rnd()*1.6,.12),crestM);m.rotation.x=-Math.PI/2;m.rotation.z=rnd()*.6-.3;
+    const x=(rnd()-.5)*150,z=(rnd()-.5)*110; if(Math.hypot(x,z+2)<10&&false)continue; m.position.set(x,-.7,z);m.userData={x,z,ph:rnd()*6};scene.add(m);SPARKS.push(m)}
+
+  controls=new THREE.OrbitControls(camera,renderer.domElement);
+  Object.assign(controls,{enableDamping:true,dampingFactor:.08,minPolarAngle:.3,maxPolarAngle:1.22,minAzimuthAngle:-1.1,maxAzimuthAngle:1.1,minDistance:18,maxDistance:240,screenSpacePanning:false,enablePan:true});
+
+  // 積木
+  const tree=(g,x,z,s)=>{add(g,G.cyl(.09*s,.12*s,.5*s,6),'#8a6642',x,.25*s,z);add(g,G.sph(.48*s),'#5aa862',x,.78*s,z);add(g,G.sph(.34*s),'#74bd6f',x+.12*s,1.18*s,z-.05*s)};
+  const pine=(g,x,z,s,snow)=>{add(g,G.cyl(.08*s,.1*s,.4*s,6),'#8a6642',x,.2*s,z);add(g,G.cone(.46*s,.85*s,8),flat('#2f7d55'),x,.78*s,z);add(g,G.cone(.33*s,.65*s,8),flat('#3f9a66'),x,1.25*s,z);if(snow)add(g,G.cone(.17*s,.26*s,8),'#ffffff',x,1.5*s,z)};
+  const person=(g,x,z,c)=>{add(g,G.cyl(.1,.12,.3,8),c,x,.15,z);add(g,G.sph(.11),'#f6d2b0',x,.4,z)};
+  const B={
+    house:(g,c)=>{add(g,G.box(1.5,.95,1.2),cream,0,.48,0);add(g,G.cone(1.28,.8,4),flat(c),0,1.34,0,{ry:Math.PI/4});add(g,G.box(.3,.5,.06),'#8a6642',-.3,.25,.61);add(g,G.box(.3,.3,.06),glass,.38,.56,.61)},
+    shop:(g,c)=>{add(g,G.box(1.6,.9,1.15),cream,0,.45,0);add(g,G.box(1.8,.16,1.35),c,0,.98,0);add(g,G.box(1.8,.1,.55),c,0,.74,.84,{rx:.4});add(g,G.box(1,.42,.06),glass,0,.46,.59)},
+    tower:(g,c)=>{add(g,G.cyl(.5,.62,2.1,12),cream,0,1.05,0);add(g,G.cone(.74,.85,12),c,0,2.52,0);add(g,G.box(.26,.34,.06),glass,0,1.45,.52)},
+    dome:(g,c)=>{add(g,G.cyl(.9,.95,.7,16),cream,0,.35,0);add(g,new THREE.SphereGeometry(.86,18,10,0,Math.PI*2,0,Math.PI/2),c,0,.7,0);add(g,G.cyl(.09,.12,1,8),'#3a4a52',.25,1.45,.25,{rx:.6})},
+    lab:(g,c)=>{add(g,G.box(1.4,1.05,1.15),'#3a4a52',0,.52,0);add(g,G.box(1,.34,.06),'#7fe3d0',0,.62,.59);add(g,G.cyl(.04,.04,.75,6),'#cfd8dc',0,1.42,0);add(g,G.sph(.22),glow('#7fe3d0','#2fc9ae'),0,1.9,0)},
+    chart:(g)=>{add(g,G.box(2,.1,1.4),cream,0,.05,0);[['#e8734a',.6],['#4f8fe0',1.3],['#8a6fdc',.9]].forEach((a,i)=>add(g,G.box(.42,a[1],.42),a[0],-.6+i*.6,.1+a[1]/2,0))},
+    billboard:(g,c)=>{add(g,G.box(2.3,1.5,.12),'#3a4a52',0,1.6,-.3,{rx:-.12});add(g,new THREE.PlaneGeometry(2.1,1.3),glow('#c9b8ff','#8a6fdc'),0,1.6,-.22,{rx:-.12,noShadow:true});[-.8,.8].forEach(x=>add(g,G.cyl(.06,.06,1,6),wood,x,.5,-.36))},
+    cinema:(g,c)=>{add(g,G.box(2.1,1.3,.9),cream,0,.65,-.4);add(g,G.box(2.3,.18,1.1),c,0,1.38,-.4);add(g,new THREE.PlaneGeometry(1.7,.95),mat('#2a363c'),0,.72,.06,{noShadow:true})},
+    lighthouse:(g,c)=>{add(g,G.cyl(.95,1.05,.3,16),'#e9dcc0',0,.15,0);add(g,G.cyl(.45,.66,2.6,14),cream,0,1.6,0);add(g,G.cyl(.56,.6,.4,14),c,0,1.3,0);add(g,G.cyl(.5,.53,.36,14),c,0,2.3,0);add(g,G.cyl(.62,.62,.1,14),'#3a4a52',0,2.95,0);add(g,G.cyl(.36,.36,.5,12),glow('#ffe58a','#ffcf3a'),0,3.25,0);add(g,G.cone(.55,.5,14),c,0,3.75,0)},
+    tent:(g,c)=>{add(g,G.cone(1,1.2,6),flat(c),0,.6,0);add(g,G.box(.3,.5,.06),'#3a4a52',0,.25,.82,{rx:-.5});add(g,G.cyl(.03,.03,.9,5),'#fff',0,1.5,0);add(g,G.box(.42,.26,.04),'#ffe58a',.22,1.8,0)},
+    // 溝通表達：舞台、麥克風塔、聽眾席
+    stage:(g,c)=>{add(g,G.cyl(1.35,1.45,.32,24),'#e9dcc0',0,.16,0);add(g,new THREE.CylinderGeometry(1.5,1.5,1.7,24,1,true,Math.PI*.15,Math.PI*.7),mat(c,{side:THREE.DoubleSide}),0,1.15,0,{ry:Math.PI});
+      add(g,G.cyl(.04,.04,.8,6),'#3a4a52',0,.72,.3);add(g,G.sph(.11),'#3a4a52',0,1.15,.3);person(g,.35,.45,'#e64b7b');
+      [-1,0,1].forEach(k=>add(g,G.box(.5,.16,.22),wood,k*.62,.08,1.65))},
+    mic:(g,c)=>{add(g,G.cyl(.55,.7,.4,14),cream,0,.2,0);add(g,G.cyl(.12,.14,1.8,10),'#5b6870',0,1.3,0);add(g,G.cyl(.34,.34,.7,16),'#3a4a52',0,2.5,0);add(g,G.sph(.34),flat('#3a4a52'),0,2.86,0);add(g,new THREE.TorusGeometry(.42,.05,8,24,Math.PI),c,0,2.4,0,{rz:Math.PI});add(g,G.sph(.12),glow('#ffe58a','#ffcf3a'),0,3.32,0)},
+    bench:(g,c)=>{[[-.5,.2],[.5,-.2]].forEach(p=>{add(g,G.box(1.1,.12,.36),wood,p[0],.32,p[1]);add(g,G.box(.08,.3,.3),'#8a6642',p[0]-.45,.15,p[1]);add(g,G.box(.08,.3,.3),'#8a6642',p[0]+.45,.15,p[1])});person(g,-.3,.2,c);person(g,.6,-.2,'#4f8fe0')},
+    // 聖誕：大樹、禮物、港口
+    xtree:(g,c)=>{add(g,G.cyl(.16,.2,.6,8),'#8a6642',0,.3,0);[[1.3,1.3,.9],[1.05,1.15,1.6],[.78,1,2.25],[.5,.8,2.8]].forEach(a=>add(g,G.cone(a[0],a[1],9),flat('#2f7d55'),0,a[2],0));
+      add(g,new THREE.OctahedronGeometry(.26),glow('#ffe58a','#ffcf3a'),0,3.35,0);
+      for(let i=0;i<14;i++){const a=i*2.4,h=.9+(i%7)*.33,r=1.15-(h-.9)*.42;add(g,G.sph(.09),glow(i%2?'#e64b7b':'#ffe58a'),Math.cos(a)*r,h,Math.sin(a)*r,{noShadow:true})}},
+    gifts:(g)=>{[['#e64b7b',-.5,.2,.6],['#ffe58a',.35,-.1,.5],['#4f8fe0',.1,.55,.42],['#fff',-.1,-.6,.38]].forEach(a=>{add(g,G.box(a[3],a[3],a[3]),a[0],a[1],a[3]/2,a[2]);add(g,G.box(a[3]+.02,a[3]+.02,.08),'#2c9a68',a[1],a[3]/2,a[2])})},
+    snowman:(g)=>{add(g,G.sph(.5),'#ffffff',0,.45,0);add(g,G.sph(.34),'#ffffff',0,1.1,0);add(g,G.cone(.07,.3,8),'#ff8a3d',0,1.12,.38,{rx:Math.PI/2});add(g,G.cyl(.24,.24,.32,12),'#22323a',0,1.5,0);add(g,G.box(.6,.08,.2),'#e64b7b',0,.86,.18)},
+    harbor:(g,c)=>{add(g,G.box(2,.14,.8),wood,0,.1,.5);add(g,G.box(.7,.14,1.7),wood,.5,.1,1.5);[-.8,.8].forEach(x=>add(g,G.cyl(.07,.07,.55,6),'#8a6642',x,.27,.85));add(g,G.box(1.2,.8,1),cream,-.3,.42,-.6);add(g,G.cone(1.05,.6,4),flat('#e64b7b'),-.3,1.12,-.6,{ry:Math.PI/4});add(g,G.box(.5,.32,.04),'#ffe58a',.6,.95,-.1)},
+    lamp:(g)=>{add(g,G.cyl(.05,.06,1.4,6),'#3a4a52',0,.7,0);add(g,G.sph(.17),glow('#ffe58a','#ffcf3a'),0,1.5,0)}
+  };
+  const KIT={
+    speech:{center:'stage',ring:['mic','house','bench','shop','tower','tent'],grass:'#a6d47a',sand:'#f1e2bf',roofs:['#e9a93a','#e8734a','#e64b7b','#4f8fe0']},
+    ai:{center:'lab',ring:['dome','chart','billboard','cinema','lighthouse','tower'],grass:'#9bd07a',sand:'#efe2c4',roofs:['#8a6fdc','#4f8fe0','#5b45ae','#3fae8a']},
+    xmas:{center:'xtree',ring:['harbor','gifts','house','snowman','shop','lamp'],grass:'#eef5f2',sand:'#e6e9e4',roofs:['#e64b7b','#2c9a68','#c9433f','#e9a93a'],snow:true}
+  };
+
+  COURSES.forEach((c,ci)=>{
+    const k=KIT[c.id], g=new THREE.Group(), P=new THREE.Vector3(c.pos[0],0,c.pos[1]);
+    g.position.copy(P);g.userData.id=c.id;scene.add(g);
+    const body=new THREE.Group();g.add(body);
+    const grass=new THREE.MeshStandardMaterial({color:k.grass,roughness:.95,flatShading:true}), sand=new THREE.MeshStandardMaterial({color:k.sand,roughness:.95,flatShading:true});
+    const stops=[];
+    RING.forEach(([q,r],ti)=>{
+      const tx=1.5*TR*q, tz=Math.sqrt(3)*TR*(r+q/2), tg=new THREE.Group();tg.position.set(tx,0,tz);body.add(tg);
+      const hh=ti===0?.35:0;
+      add(tg,G.cyl(TR*.92,TR*.7,1.5,6),flat(k.snow?'#b9c4c7':'#cfae78'),0,-.65,0,{ry:Math.PI/6});
+      add(tg,G.cyl(TR*.995,TR*.94,1.0+hh,6),sand,0,.55+hh/2,0,{ry:Math.PI/6});
+      add(tg,G.cyl(TR*.8,TR*.85,.26,6),grass,0,1.17+hh,0,{ry:Math.PI/6});
+      const built=new THREE.Group();built.position.y=TY+hh;built.scale.setScalar(ti===0?1.5:1.18);tg.add(built);
+      B[ti===0?k.center:k.ring[ti-1]](built,k.roofs[ti%k.roofs.length]);
+      const deco=new THREE.Group();deco.position.y=TY+hh;tg.add(deco);
+      if(ti>0)[[-1.35,-.8],[1.35,-.8],[-1.15,.95]].forEach(p=>{if(rnd()<.7)(k.snow||rnd()<.45?pine:tree)(deco,p[0]+rnd()*.2,p[1]+rnd()*.2,.85+rnd()*.4,k.snow)});
+      if(ti>0&&rnd()<.5)person(deco,1.1,1,k.roofs[(ti+1)%k.roofs.length]);
+      stops.push({name:c.stops[ti],anchor:new THREE.Vector3(tx,TY+hh+(ti===0?4.6:2.9),tz)});
+    });
+    // 淺灘與光圈
+    const rad=TR*3.1;
+    const sh=(r,o)=>{const m=new THREE.Mesh(new THREE.CircleGeometry(r,48),new THREE.MeshBasicMaterial({color:'#c9f4ea',transparent:true,opacity:o,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.y=-.72+o*.05;g.add(m);return m};
+    const sh1=sh(rad+3,.2), sh2=sh(rad+1.4,.3);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(rad+.8,rad+1.2,64),new THREE.MeshBasicMaterial({color:c.c,transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false}));
+    ring.rotation.x=-Math.PI/2;ring.position.y=-.6;ring.visible=false;g.add(ring);
+    // 名牌
+    const plate=document.createElement('button');plate.type='button';plate.className='plate'+(c.dark?' dark':'');plate.style.setProperty('--c',c.c);plate.dataset.go=c.id;
+    plate.setAttribute('aria-label','開啟 '+c.name+' 課程資訊');
+    plate.innerHTML='<span class="sub">'+esc(c.tag)+'</span><b>'+esc(c.name)+'</b><span class="meta">'+c.facts.filter(f=>f[0]).map(f=>f[0]+' '+f[1]).join('・')+'</span>';
+    labels.appendChild(plate);
+    stops.forEach(s=>{const el=document.createElement('button');el.type='button';el.className='stop';el.style.setProperty('--c',c.c);el.dataset.go=c.id;el.tabIndex=-1;el.innerHTML='<i></i>'+esc(s.name);labels.appendChild(el);s.el=el});
+    const on=OPEN.has(c.id);
+    NODES[c.id]={g,body,pos:P,plate,stops,ring,shallows:[sh1,sh2],rad,phase:ci*2.1,h:on?1:0,target:on?1:0,lod:-1};
+    g.visible=on;
+  });
+  // 船與雲
+  const roofC=['#e8734a','#4f8fe0','#8a6fdc','#e9a93a','#3fae8a','#e0608c'];
+  [[-8,22],[30,-24],[-52,-8],[52,-10],[8,26],[-36,24]].forEach((p,i)=>{const b=new THREE.Group();add(b,G.box(1.5,.4,.7),'#fff',0,0,0);add(b,G.cyl(.04,.04,1.4,5),'#8a6642',0,.8,0);add(b,G.cone(.5,1,3),flat(roofC[i%6]),.2,.95,0,{ry:Math.PI/2,s:[1,1,.2]});b.position.set(p[0],-.5,p[1]);b.userData={x:p[0],z:p[1],ph:i*1.7};scene.add(b);BOATS.push(b)});
+  for(let i=0;i<6;i++){const cg=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:'#fff',transparent:true,opacity:.82,roughness:1});for(let j=0;j<3;j++)add(cg,G.sph(2+rnd()*1.2),m,j*2.6-2.6,rnd()*.6,rnd(),{s:[1,.6,1],noShadow:true});cg.position.set(-80+i*32,24+rnd()*6,-46+rnd()*16);scene.add(cg);CLOUDS.push(cg)}
+  // 浮出時的水波
+  window.ripple=(id)=>{if(reduce)return;const n=NODES[id];[0,260,520].forEach(d=>{const m=new THREE.Mesh(new THREE.RingGeometry(1,1.35,64),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(n.pos.x,-.68,n.pos.z);scene.add(m);RIPPLES.push({m,t0:performance.now()+d})})};
+}
+
+/* 鏡頭 */
+const DIR=()=>new THREE.Vector3(0,1,1.25);
+function size(){if(!ok3d)return;const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function fly(target,dist,ms){
+  if(!ok3d)return;const to=target.clone().add(DIR().normalize().multiplyScalar(dist));
+  if(reduce||!ms){controls.target.copy(target);camera.position.copy(to);controls.update();return}
+  tween={t0:performance.now(),ms,p0:camera.position.clone(),p1:to,g0:controls.target.clone(),g1:target.clone()};
+}
+function frameIds(ids,ms){
+  if(!ok3d)return;const w=stage.clientWidth,h=stage.clientHeight,vf=camera.fov*Math.PI/360;
+  const list=ids.length?ids:COURSES.map(c=>c.id);
+  let minx=1e9,maxx=-1e9,minz=1e9,maxz=-1e9;list.forEach(id=>{const n=NODES[id];minx=Math.min(minx,n.pos.x-n.rad-2);maxx=Math.max(maxx,n.pos.x+n.rad+2);minz=Math.min(minz,n.pos.z-n.rad-2);maxz=Math.max(maxz,n.pos.z+n.rad+2)});
+  const cx=(minx+maxx)/2, cz=(minz+maxz)/2, ww=maxx-minx, dd=maxz-minz;
+  const sideL=consoleOn&&w>760?400:0, sideR=(active&&w>760)?440:0, uw=w-sideL-sideR;
+  const ppu=Math.min(uw/(ww*1.15),(h-200)/(dd*1.45)), dist=h/(2*ppu*Math.tan(vf));
+  // 介面遮住一側時，把畫面中心往空的一側推
+  const shift=(sideR-sideL)/2/ppu;
+  fly(new THREE.Vector3(cx+shift,0,cz+1.5),Math.max(26,Math.min(dist,200)),ms);
+}
+function focusIsland(id,ms){
+  const n=NODES[id];if(!n||!ok3d)return;const w=stage.clientWidth,h=stage.clientHeight,vf=camera.fov*Math.PI/360;
+  const sideR=w>760?440:0, mobile=w<=760;
+  const ppu=Math.min((w-sideR)/(n.rad*2+8),(mobile?h*.42:h-160)/(n.rad*2+9)), dist=h/(2*ppu*Math.tan(vf));
+  const off=new THREE.Vector3(sideR/2/ppu,0,mobile?n.rad*.9+3:1);
+  fly(n.pos.clone().add(off),Math.max(20,dist),ms);
+}
+
+const _v=new THREE.Vector3(),_r=new THREE.Vector3(),_a={},_b={};
+function project(p,out){_v.copy(p).project(camera);out.x=(_v.x+1)/2*stage.clientWidth;out.y=(1-_v.y)/2*stage.clientHeight;out.ok=_v.z<1&&_v.z>-1;return out}
+function layoutLabels(){
+  const W=stage.clientWidth,H=stage.clientHeight;_r.setFromMatrixColumn(camera.matrixWorld,0);
+  COURSES.forEach(c=>{const n=NODES[c.id],p=n.g.position;
+    if(n.h<.6){n.plate.style.display='none';n.stops.forEach(s=>s.el.dataset.show=0);return}
+    project(new THREE.Vector3(p.x,p.y,p.z),_a);project(new THREE.Vector3(p.x,p.y,p.z).add(_r),_b);const ppu=Math.hypot(_b.x-_a.x,_b.y-_a.y);
+    const lod=ppu>=13?1:0; if(lod!==n.lod){n.lod=lod;n.plate.dataset.lod=lod}
+    project(new THREE.Vector3(p.x,p.y+(lod?8.2:7),p.z-n.rad*.35),_a);
+    const vis=_a.ok&&_a.x>-200&&_a.x<W+200&&_a.y>-80&&_a.y<H+120;
+    n.plate.style.display=vis?'':'none';n.plate.style.opacity=Math.min(1,(n.h-.6)/.3);
+    if(vis)n.plate.style.transform='translate('+_a.x.toFixed(1)+'px,'+_a.y.toFixed(1)+'px) translate(-50%,-100%)';
+    const showStops=ppu>=26&&(active===c.id||hover===c.id||OPEN.size===1);
+    n.stops.forEach((s,i)=>{ if(!showStops||i===0){s.el.dataset.show=0;return}
+      project(new THREE.Vector3(p.x+s.anchor.x,p.y+s.anchor.y,p.z+s.anchor.z),_b);
+      s.el.dataset.show=_b.ok?1:0;s.el.style.transform='translate('+_b.x.toFixed(1)+'px,'+_b.y.toFixed(1)+'px) translate(-50%,-100%)';s.el.style.zIndex=Math.round(_b.y)});
+  });
+}
+function loop(t){
+  requestAnimationFrame(loop);
+  if(tween){const k=Math.min(1,(t-tween.t0)/tween.ms),e=1-Math.pow(1-k,4);camera.position.lerpVectors(tween.p0,tween.p1,e);controls.target.lerpVectors(tween.g0,tween.g1,e);if(k>=1)tween=null}
+  controls.update();
+  COURSES.forEach(c=>{const n=NODES[c.id];
+    n.h+=(n.target-n.h)*(reduce?1:.055); if(Math.abs(n.target-n.h)<.002)n.h=n.target;
+    n.g.visible=n.h>.01;
+    const e=n.h<1?1-Math.pow(1-n.h,3):1;
+    const lift=(c.id===active?.55:0)+(c.id===hover&&c.id!==active?.25:0)+(reduce?0:Math.sin(t/1100+n.phase)*.06);
+    n.body.position.y=(-7.5*(1-e))+lift;
+    n.body.rotation.y=(1-e)*.5;
+    n.shallows.forEach(s=>s.material.opacity=(s===n.shallows[0]?.2:.3)*e);
+    n.ring.visible=c.id===active&&n.h>.9; if(n.ring.visible&&!reduce){const s=1+Math.sin(t/300)*.03;n.ring.scale.set(s,s,1)}
+    n.plate.classList.toggle('on',c.id===active);
+  });
+  for(let i=RIPPLES.length-1;i>=0;i--){const r=RIPPLES[i],k=(t-r.t0)/1600;if(k<0){r.m.visible=false;continue}r.m.visible=true;const s=4+k*16;r.m.scale.set(s,s,1);r.m.material.opacity=.8*(1-k);if(k>=1){scene.remove(r.m);RIPPLES.splice(i,1)}}
+  if(!reduce){
+    CLOUDS.forEach((c,i)=>{c.position.x+=.01+(i%3)*.004;if(c.position.x>110)c.position.x=-110});
+    BOATS.forEach(b=>{const u=b.userData;b.position.x=u.x+Math.sin(t/4000+u.ph)*3;b.position.z=u.z+Math.cos(t/5200+u.ph)*2;b.position.y=-.5+Math.sin(t/700+u.ph)*.06;b.rotation.y=Math.sin(t/4000+u.ph)*.4});
+    SPARKS.forEach(s=>{const u=s.userData;s.position.x=u.x+Math.sin(t/3000+u.ph)*1.2;s.material.opacity=.55;s.scale.x=.7+Math.sin(t/900+u.ph)*.35});
+  }
+  renderer.render(scene,camera);layoutLabels();
+}
+function pick(ev){const r=renderer.domElement.getBoundingClientRect();mouse.set((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);
+  const groups=COURSES.filter(c=>NODES[c.id].h>.6).map(c=>NODES[c.id].g);const hit=ray.intersectObjects(groups,true)[0];if(!hit)return null;let o=hit.object;while(o&&!o.userData.id)o=o.parent;return o?o.userData.id:null}
+
+/* ============================ 介面 ============================ */
+function hideHint(){$('hint').classList.add('gone')}
+function renderDock(){
+  const d=$('dock');d.innerHTML='';
+  COURSES.filter(c=>OPEN.has(c.id)).forEach(c=>{const b=document.createElement('button');b.type='button';b.style.setProperty('--c',c.c);b.className=c.id===active?'on':'';
+    b.setAttribute('aria-label','開啟 '+c.name+' 課程資訊');
+    b.innerHTML='<span class="dot" style="'+(c.dark?'color:#22323a':'')+'">'+ICON[c.id]+'</span><span><b>'+esc(c.name)+'</b><small>'+esc(c.tag)+'</small></span>';
+    b.onclick=()=>openIsland(c.id);d.appendChild(b)});
+}
+function renderChrome(){
+  $('sceneTitle').textContent=TITLE||'課程資訊島';
+  $('sceneSub').textContent=TITLE?'陳志欣老師的課程群島':(OPEN.size?'陳志欣老師的課程群島・點島看課程':'陳志欣老師的課程群島');
+  document.title=(TITLE?TITLE+'｜':'')+'課程資訊島';
+  $('empty').classList.toggle('show',OPEN.size===0&&!consoleOn);
+  $('hint').style.display=OPEN.size?'':'none';
+  $('teacher').hidden=consoleOn||(S.open.length>0&&!S.console);
+  renderDock();
+  if(!ok3d)renderFallback();
+}
+function openIsland(id){
+  const c=BY[id];if(!c||!OPEN.has(id))return;active=id;hideHint();
+  const head=$('pHead');head.style.setProperty('--c',c.c);head.style.background=c.c;head.classList.toggle('dark',!!c.dark);
+  $('pTitle').textContent=c.name;$('pTag').textContent=c.tag;
+  $('pBody').style.setProperty('--c-deep',c.deep);
+  $('pBody').innerHTML=(c.full!==c.name?'<p class="full">'+esc(c.full)+'</p>':'')+'<p class="desc">'+esc(c.desc)+'</p>'
+    +'<div class="facts">'+c.facts.map(f=>'<span>'+(f[0]?'<strong>'+f[0]+'</strong>':'')+esc(f[1])+'</span>').join('')+'</div>'
+    +'<h3>航線</h3><ol class="route">'+c.route.map((r,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span><span><b>'+esc(r[0])+'</b><small>'+esc(r[1])+'</small></span></li>').join('')+'</ol>'
+    +'<p class="url">'+esc(c.url)+'</p>';
+  $('pGo').href=c.url;
+  const p=$('panel');p.classList.add('open');p.setAttribute('aria-hidden','false');
+  if(consoleOn)closeConsole(true);
+  focusIsland(id,1100);renderDock();
+}
+function closePanel(){active=null;const p=$('panel');p.classList.remove('open');p.setAttribute('aria-hidden','true');frameIds([...OPEN],900);renderDock()}
+
+/* 講師控台 */
+function renderConsole(){
+  const rows=$('cRows');rows.innerHTML='<span class="c-label">開放的課程島</span>';
+  COURSES.forEach(c=>{const on=OPEN.has(c.id),r=document.createElement('div');r.className='course-row'+(on?' on':'');r.style.setProperty('--c',c.c);
+    r.innerHTML='<span class="dot" style="'+(c.dark?'color:#22323a':'')+'">'+ICON[c.id]+'</span><span><b>'+esc(c.name)+'</b><small>'+esc(c.tag)+'</small></span>'
+      +'<span><button class="switch" type="button" role="switch" aria-checked="'+on+'" aria-label="'+esc(c.name)+' 開放"></button><div class="sw-state">'+(on?'開放':'隱藏')+'</div></span>';
+    r.querySelector('.switch').onclick=()=>toggleCourse(c.id);rows.appendChild(r)});
+  renderShare();
+}
+function currentIds(){return COURSES.map(c=>c.id).filter(id=>OPEN.has(id))}
+function qrSVG(text){try{const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:0,scalable:true})}catch(e){return ''}}
+function renderShare(){
+  const ids=currentIds(),box=$('cShare');
+  if(!ids.length){box.innerHTML='<div class="c-empty">至少開放一座島，才會產生學員連結</div>';return}
+  const link=studentLink(ids,TITLE), svg=qrSVG(link);
+  box.innerHTML='<div class="qr-box"><div class="qr" aria-label="學員連結 QR Code">'+(svg||'<small>QR 無法載入，請改用連結</small>')+'</div><div class="acts">'
+    +'<button class="btn soft" id="cCopy" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg><span>複製連結</span></button>'
+    +'<button class="btn soft" id="cProject" type="button"'+(svg?'':' disabled')+'><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg>投影 QR Code</button></div></div>'
+    +'<div class="linkfield" id="cLink">'+esc(link)+'</div>'
+    +(/^https?:/.test(location.protocol)?'':'<p class="c-note">目前是本機檔案，發布到網站後連結會自動帶入正式網址。</p>');
+  $('cCopy').onclick=e=>copyText(link,e.currentTarget);
+  $('cProject').onclick=()=>openQR(link,ids);
+}
+function toggleCourse(id){
+  const turningOn=!OPEN.has(id);
+  if(turningOn)OPEN.add(id);else OPEN.delete(id);
+  if(ok3d){NODES[id].target=turningOn?1:0;if(turningOn){NODES[id].g.visible=true;ripple(id)}}
+  if(!turningOn&&active===id){active=null;$('panel').classList.remove('open')}
+  renderConsole();renderChrome();frameIds(currentIds().length?currentIds():[id],1000);
+}
+function openConsole(){consoleOn=true;document.body.classList.add('console');const c=$('console');c.classList.add('open');c.setAttribute('aria-hidden','false');
+  if(active){active=null;$('panel').classList.remove('open')}
+  $('cSession').value=TITLE;renderConsole();renderChrome();frameIds(currentIds(),900);setTimeout(()=>$('cClose').focus(),60)}
+function closeConsole(silent){consoleOn=false;document.body.classList.remove('console');const c=$('console');c.classList.remove('open');c.setAttribute('aria-hidden','true');renderChrome();if(!silent)frameIds(currentIds(),900)}
+function previewAsStudent(){
+  const ids=currentIds();
+  try{history.replaceState(null,'',studentLink(ids,TITLE).replace(/^https?:\/\/[^/]+/,'')||('?open='+ids.join(',')))}catch(e){}
+  S.open=ids;S.console=false;closeConsole();
+  if(ids.length===1)setTimeout(()=>openIsland(ids[0]),500);
+  toast(ids.length?'這就是學員看到的畫面，按 Shift+T 回到控台':'目前沒有開放任何島');
+}
+function openQR(link,ids){
+  $('qvCode').innerHTML=qrSVG(link);
+  $('qvTitle').textContent=TITLE||'今天的課程島';
+  $('qvChips').innerHTML=ids.map(id=>{const c=BY[id];return '<span class="chip'+(c.dark?' dark':'')+'" style="--c:'+c.c+'">'+esc(c.name)+'</span>'}).join('');
+  $('qrView').classList.add('open');setTimeout(()=>$('qvClose').focus(),50);
+}
+function closeQR(){$('qrView').classList.remove('open')}
+
+function renderFallback(){
+  const f=$('fallback');f.classList.toggle('show',OPEN.size>0);f.innerHTML='';
+  COURSES.filter(c=>OPEN.has(c.id)).forEach(c=>{const b=document.createElement('button');b.type='button';b.style.setProperty('--c',c.c);if(c.dark)b.style.color='#22323a';
+    b.innerHTML='<b>'+esc(c.name)+'</b>'+esc(c.tag);b.onclick=()=>openIsland(c.id);f.appendChild(b)});
+}
+
+/* 事件 */
+$('pClose').onclick=closePanel;
+$('pCopy').onclick=e=>active&&copyText(BY[active].url,e.currentTarget);
+$('teacher').onclick=openConsole;
+$('cClose').onclick=()=>closeConsole();
+$('cPreview').onclick=previewAsStudent;
+$('qvClose').onclick=closeQR;
+$('cSession').addEventListener('input',e=>{TITLE=e.target.value.trim().slice(0,40);renderChrome();renderShare()});
+$('btnHome').onclick=()=>{if(active)closePanel();else frameIds(currentIds(),900)};
+$('btnFull').onclick=()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const p=document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>toast('此瀏覽器無法切換全螢幕'))}}catch(e){toast('此瀏覽器無法切換全螢幕')}};
+document.addEventListener('keydown',e=>{
+  const typing=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if(e.key==='Escape'){if($('qrView').classList.contains('open'))closeQR();else if(active)closePanel();else if(consoleOn)closeConsole()}
+  else if(e.shiftKey&&(e.key==='T'||e.key==='t')&&!typing){e.preventDefault();consoleOn?closeConsole():openConsole()}
+});
+if(ok3d){
+  labels.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)openIsland(b.dataset.go)});
+  labels.addEventListener('wheel',e=>{renderer.domElement.dispatchEvent(new WheelEvent('wheel',e));e.preventDefault()},{passive:false});
+  let down=null;
+  renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];hideHint()});
+  renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){hover=pick(e);renderer.domElement.style.cursor=hover?'pointer':'grab'}});
+  renderer.domElement.addEventListener('pointerup',e=>{if(!down)return;const m=Math.hypot(e.clientX-down[0],e.clientY-down[1]);down=null;if(m>6)return;const id=pick(e);if(id)openIsland(id)});
+  new ResizeObserver(()=>size()).observe(stage);
+  size();
+  // 開場：從高空落到群島
+  const ids=currentIds();
+  camera.position.set(0,140,170);controls.target.set(0,0,0);controls.update();
+  frameIds(ids,reduce?0:2200);
+  requestAnimationFrame(loop);
+}
+renderChrome();
+if(S.console)openConsole();
+else if(OPEN.size===1)setTimeout(()=>openIsland([...OPEN][0]),reduce?0:1500);
+</script>
+</body>
+</html>
