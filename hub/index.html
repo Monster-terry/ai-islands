@@ -180,8 +180,8 @@ body.console .top{left:420px}
 #qrView .chip.dark{color:var(--ink)}
 #qrView .x{position:absolute;right:24px;top:22px}
 
-#toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:var(--ink);color:#fff;padding:9px 18px;border-radius:12px;z-index:80;font-size:14px;transition:transform .4s var(--ease);pointer-events:none}
-#toast.show{transform:translate(-50%,0)}
+#toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-200%);opacity:0;visibility:hidden;background:var(--ink);color:#fff;padding:9px 18px;border-radius:12px;z-index:80;font-size:14px;transition:transform .4s var(--ease),opacity .3s,visibility .3s;pointer-events:none}
+#toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 
 #fallback{position:fixed;inset:120px 20px 120px;display:none;flex-wrap:wrap;gap:16px;align-content:center;justify-content:center;z-index:5}
 #fallback.show{display:flex}
@@ -539,7 +539,7 @@ function renderChrome(){
   $('sceneSub').textContent=TITLE?'陳志欣老師的課程群島':(OPEN.size?'陳志欣老師的課程群島・點島看課程':'陳志欣老師的課程群島');
   document.title=(TITLE?TITLE+'｜':'')+'課程資訊島';
   $('empty').classList.toggle('show',OPEN.size===0&&!consoleOn);
-  $('hint').style.display=OPEN.size?'':'none';
+  $('hint').style.display=(OPEN.size&&ok3d)?'':'none';
   $('teacher').hidden=consoleOn||(S.open.length>0&&!S.console);
   renderDock();
   if(!ok3d)renderFallback();
